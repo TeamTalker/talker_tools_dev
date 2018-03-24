@@ -1,0 +1,48 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl_demultiplexer" uuid="40c5677d-b5c3-4647-be57-fc84424632be">
+      <sDescription></sDescription>
+      <author>Team Talker</author>
+      <license>BSD</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKER"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="TALKER"/>
+         <int32.bipolar name="energy"/>
+         <int32.bipolar name="pitch"/>
+         <int32.bipolar name="k1"/>
+         <int32.bipolar name="k2"/>
+         <int32.bipolar name="k3"/>
+         <int32.bipolar name="k4"/>
+         <int32.bipolar name="k5"/>
+         <int32.bipolar name="k6"/>
+         <int32.bipolar name="k7"/>
+         <int32.bipolar name="k8"/>
+         <int32.bipolar name="k9"/>
+         <int32.bipolar name="k10"/>
+      </outlets>
+      <displays/>
+      <params/>
+      <attribs/>
+      <code.krate><![CDATA[//
+
+outlet_energy = inlet_TALKER[0];
+outlet_pitch  = inlet_TALKER[1];
+outlet_k1  = inlet_TALKER[2];
+outlet_k2  = inlet_TALKER[3];
+outlet_k3  = inlet_TALKER[4];
+outlet_k4  = inlet_TALKER[5];
+outlet_k5  = inlet_TALKER[6];
+outlet_k6  = inlet_TALKER[7];
+outlet_k7  = inlet_TALKER[8];
+outlet_k8  = inlet_TALKER[9];
+outlet_k9  = inlet_TALKER[10];
+outlet_k10 = inlet_TALKER[11];
+
+for(i = 0; i < 16; i++) {
+	outlet_TALKER[i] = inlet_TALKER[i];	
+};]]></code.krate>
+      <code.srate><![CDATA[outlet_o =  ___SMMUL(inlet_a,i)<<5;
+   i += step;]]></code.srate>
+   </obj.normal>
+</objdefs>

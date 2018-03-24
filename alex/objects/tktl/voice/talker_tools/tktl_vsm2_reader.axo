@@ -1,0 +1,375 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl_vsm2_reader" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb">
+      <sDescription>Part of the Talkie Tools object set.</sDescription>
+      <author>Talker Tools</author>
+      <license>BSD</license>
+      <helpPatch>talker_tools.axh</helpPatch>
+      <inlets>
+         <bool32 name="mode" description="mode-select (normal/circuit-bent)"/>
+         <bool32.risingfalling name="gate" description="play word"/>
+         <frac32.positive name="rate" description="playback rate"/>
+         <bool32.risingfalling name="loop" description="loop on/off"/>
+         <bool32.risingfalling name="freeze" description="freeze"/>
+         <bool32.rising name="step" description="frame-step (only active when freeze turned on)"/>
+         <bool32.rising name="setjump" description="set jump-point"/>
+         <bool32.rising name="jump" description="jump to saved jump-point"/>
+         <bool32.risingfalling name="glitch" description="glitch"/>
+      </inlets>
+      <outlets>
+         <frac32buffer name="TALKER" description="Talker Tools index connection (NOT AUDIO!)"/>
+         <bool32 name="gate" description="gate signal out"/>
+         <bool32.pulse name="wordend" description="pulse on word-end"/>
+         <int32 name="debug"/>
+      </outlets>
+      <displays/>
+      <params>
+         <int32.hradio name="mode" description="word/bend mode-selection">
+            <MaxValue i="2"/>
+         </int32.hradio>
+         <int32 name="word" description="word-select">
+            <MinValue i="0"/>
+            <MaxValue i="1024"/>
+         </int32>
+         <frac32.u.map name="rate" description="playback rate"/>
+         <bool32.tgl name="loop" description="loop on/off"/>
+         <bool32.tgl name="freeze" description="freeze"/>
+         <bool32.mom name="step" description="step frame (only works in freeze mode)"/>
+         <bool32.mom name="setjump" description="set jump-point"/>
+         <bool32.mom name="jump" description="jump to jump-point"/>
+         <bool32.mom name="glitch" description="glitch on/off"/>
+      </params>
+      <attribs>
+         <combo name="debug">
+            <MenuEntries>
+               <string>off</string>
+               <string>on</string>
+            </MenuEntries>
+            <CEntries>
+               <string>0</string>
+               <string>1</string>
+            </CEntries>
+         </combo>
+      </attribs>
+      <includes>
+         <include>./inc/file_io.h</include>
+         <include>./inc/lpc_stream.h</include>
+         <include>./inc/toneburst-utility-functions.h</include>
+      </includes>
+      <code.declaration><![CDATA[//
+
+bool disable;
+bool firstrun;
+
+uint16_t word_count;
+uint32_t word_index_new;
+uint32_t word_index_old;
+
+struct TktlVSM2WordMeta *ptr_vsm2_word_meta_start;
+struct TktlVSM2WordMeta *ptr_vsm2_word_meta;
+uint32_t vsm2_rom_size;
+
+bool gate;
+bool loop;
+bool glitch;
+bool freeze;
+bool step;
+bool set_jump;
+bool jump;
+bool word_end;
+bool word_gate;
+
+// K-rate cycle-counter
+uint32_t krate_counter;
+// Division of k-rate cycles
+// (determines playback-rate)
+uint32_t krate_divisor;
+uint32_t krate_divisor_freeze;
+// Divisor and counter for interframe interpolation
+uint32_t interp_counter;
+uint32_t interp_divisor;
+
+// Playback rate
+uint32_t rate;
+uint32_t old_rate;
+
+
+///////////////
+// Functions //
+///////////////
+
+// Check include-file ./inc/tktl_functions.h
+// TktlDisplayWordMeta();
+
+/////////////
+// Classes //
+/////////////
+
+//Check include-files ./inc/
+
+// Instantiate Stream-Reader object
+TktlGetLPCFrame get_frame;
+TktlLpcIndices lpc_indices;
+
+//]]></code.declaration>
+      <code.init><![CDATA[//
+
+LogTextMessage("\n//////////////////////////////////////////");
+LogTextMessage("// Initialising Talkie Tools ROM Reader //");
+LogTextMessage("//////////////////////////////////////////\n");
+
+////////////////////
+// Error-checking //
+////////////////////
+
+disable = false;
+firstrun = true;
+
+if(TktlShared::vsm2_word_count_ == 0) {
+	LogTextMessage("VSM2 ROM file not loaded, exiting");
+	disable = true;
+	return;	
+};
+
+//////////////////////
+//Setup object vars //
+//////////////////////
+
+word_count = TktlShared::vsm2_word_count_;
+
+ptr_vsm2_word_meta_start = TktlShared::ptr_vsm2_word_meta_sdram_;
+vsm2_rom_size = TktlShared::vsm2_rom_size_;
+ptr_vsm2_word_meta = ptr_vsm2_word_meta_start;
+
+// Init K-Rate Counter(s)
+krate_counter        = 1;
+krate_divisor        = 75;	// 75 k-rate cycles = 25ms
+krate_divisor_freeze = 0;
+interp_divisor       = krate_divisor >> 4;
+
+// Default playback rate
+rate = krate_divisor;
+old_rate = rate;
+
+gate          = false;
+loop          = false;
+glitch        = false;
+freeze        = false;
+step          = false;
+jump          = false;
+set_jump      = false;
+
+word_end      = false;
+word_gate     = true;
+
+///////////////////////
+// Display Word Meta //
+///////////////////////
+
+TktlDisplayWordMeta(attr_debug, word_index_new, ptr_vsm2_word_meta);
+
+//]]></code.init>
+      <code.krate><![CDATA[//
+
+//////////////////////////////////////
+// Exit early if no word-data found //
+//////////////////////////////////////
+
+if(disable)
+	return;
+
+///////////////////////////
+// Update word selection //
+///////////////////////////
+
+word_index_new = Max16(param_word, (word_count -1));
+
+if(word_index_new !=  word_index_old) {
+	ptr_vsm2_word_meta = ptr_vsm2_word_meta_start + word_index_new;
+	TktlDisplayWordMeta(attr_debug, word_index_new, ptr_vsm2_word_meta);	
+	word_index_old = word_index_new;
+};
+
+//////////////////
+// Rate control //
+//////////////////
+
+// Original rate = 75 k-rate cycles (25ms)
+rate = __USAT(param_rate + inlet_rate, 27);
+
+if(rate != old_rate) {
+	// Calculate new k-rate counter divisor
+	krate_divisor = MapU32(CurveLog32(rate), 480, 15);
+	// Calculate new inter-frame interpolation counter divisor
+	interp_divisor = Min32(krate_divisor >> 3, 1);
+	old_rate = rate;
+}
+
+/////////////////////////////
+// Detect rising-edge GATE //
+/////////////////////////////
+
+if(inlet_gate) {
+	if(!gate) {
+		// Only reset counter to get new frame if freeze not enabled
+		// TODO: fix so that first frame is captured if patch starts with freeze on
+		if(!freeze) {
+			get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
+			krate_counter = 1;
+			word_gate = true;
+		};
+	};
+	gate = true;
+} else {
+	gate = false;
+};
+
+////////////////////////
+// Detect LOOP toggle //
+////////////////////////
+
+if(loop != param_loop) {
+	loop = param_loop;
+	get_frame.SetLoop(loop);
+};
+
+//////////////////////////
+// Detect GLITCH toggle //
+//////////////////////////
+
+if(glitch != param_glitch) {
+	glitch = param_glitch;
+	get_frame.SetGlitch(glitch);
+};
+
+//////////////////////////
+// Handle FREEZE toggle //
+//////////////////////////
+
+// Set freeze to false if this is first k-rate cycle
+// Allows first frame LPC to be captured, if patch starts with freeze on
+if(firstrun) {
+	freeze = false;
+	firstrun = false;
+} else {
+	freeze = param_freeze;
+};
+
+// Set k-rate divisor to high value if freeze
+// Prevents frame-update running
+krate_divisor_freeze = (freeze) ? krate_divisor_freeze = 4294967295 : krate_divisor;
+
+//////////////////////////
+// Increment counter(s) //
+//////////////////////////
+
+// Master K-Rate counter
+krate_counter = (krate_counter >= krate_divisor_freeze) ? 1 : krate_counter + 1;
+
+/////////////////////////////
+// Detect rising-edge STEP //
+/////////////////////////////
+
+if(param_step) {
+	if(!step) {
+		if(freeze) {
+			krate_counter = 1;
+		};
+		step = true;
+	};
+} else {
+	step = false;
+};
+
+/////////////////////////////////
+// Detect rising-edge SET-JUMP //
+/////////////////////////////////
+
+if(param_setjump) {
+	if(!set_jump) {
+		get_frame.SetJumpPoint();	
+		set_jump = true;
+	};
+} else {
+	set_jump = false;
+};
+
+/////////////////////////////
+// Detect rising-edge JUMP //
+/////////////////////////////
+
+if(param_jump) {
+	if(!jump) {
+		get_frame.SetToJumpPoint();
+		krate_counter = 1;
+		jump = true;
+	};
+} else {
+	jump = false;
+};
+
+//////////////////////////////
+//////////////////////////////
+//// Read word LPC stream ////
+//////////////////////////////
+//////////////////////////////
+
+if(krate_counter == 1) {
+	// Read word every 60 k-rate cycles
+	lpc_indices = get_frame.GetFrame();
+	
+	// Zero interpolation counter
+	interp_counter = 0;
+
+	// Check for word-end
+	word_end = get_frame.CheckForWordEnd();
+	
+	if(word_end && !loop)
+		word_gate = false;
+};
+
+/////////////////
+// Set outlets //
+/////////////////
+
+// LPC indices
+for(int i = 0; i < 12; i++) {
+	outlet_TALKER[i] = lpc_indices.indices_[i];
+};
+
+///////////////////////////////////
+// Interpolation position outlet //
+///////////////////////////////////
+
+outlet_TALKER[12] = interp_counter;
+
+// Increment interpolation counter after setting outlet
+if(krate_counter % interp_divisor == 0) {
+	interp_counter = (interp_counter < 7) ? interp_counter + 1 : 7;
+};
+
+///////////////////////////////
+// Other multiplexed outlets //
+///////////////////////////////
+
+outlet_TALKER[13] = 0;
+outlet_TALKER[14] = 0;
+outlet_TALKER[15] = 0;
+
+/////////////////////////
+// Set word-end outlet //
+/////////////////////////
+
+outlet_wordend = word_end;
+
+/////////////////////
+// Set gate outlet //
+/////////////////////
+
+// (false if word-end true)
+outlet_gate =(!word_gate)? false : gate;
+
+outlet_debug = interp_counter;
+
+//]]></code.krate>
+   </obj.normal>
+</objdefs>

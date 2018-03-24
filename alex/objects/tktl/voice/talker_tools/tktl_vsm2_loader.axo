@@ -1,0 +1,125 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl_vsm2_loader" uuid="37f03a79-ba9e-44af-957e-28f486587b54">
+      <sDescription>Loads Word ROM data from VSM2 format files.
+Must be used in combination with the Talker Tools VSM2 ROM Reader object.
+Part of the Talkie Tools object set.</sDescription>
+      <author>Talker Tools</author>
+      <license>BSD</license>
+      <helpPatch>talker_tools.h</helpPatch>
+      <inlets/>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <file name="rom"/>
+         <combo name="debug">
+            <MenuEntries>
+               <string>off</string>
+               <string>on</string>
+            </MenuEntries>
+            <CEntries>
+               <string>0</string>
+               <string>1</string>
+            </CEntries>
+         </combo>
+      </attribs>
+      <includes>
+         <include>./inc/file_io.h</include>
+      </includes>
+      <code.declaration><![CDATA[//
+
+/*
+Struct/Class/function definitions moved to inc. file
+./inc/tktl_functions.h
+*/
+
+//////////
+// Vars //
+//////////
+
+bool multiple_instance;
+uint8_t load_status;
+
+//]]></code.declaration>
+      <code.init><![CDATA[//
+
+LogTextMessage("\n///////////////////////////////////////////////");
+LogTextMessage("// Initialising Talkie Tools VSM2 ROM Loader //");
+LogTextMessage("///////////////////////////////////////////////\n");
+	
+multiple_instance = false;
+
+//////////////////////////////////////
+// Attempts to load vsm2 into sdram //
+//////////////////////////////////////
+
+// Check if file already copied to SDRAM
+// (pointer set in TktlShared class)
+if(!TktlShared::ptr_vsm2_sdram_) {
+
+	// Run file-loader (in incl. file) and save return-status
+	// Pointer to SDRAM data passed by reference
+	load_status = TktlLoadFileSDRAM("attr_rom", TktlShared::ptr_vsm2_sdram_);
+
+	// Check return of file-loader function
+	if(load_status != 0) {
+		LogTextMessage("File-loader failed to load file to SDRAM, exiting");
+		return;
+	};
+
+	///////////////////////////
+	// Setup shared pointers //
+	///////////////////////////
+
+	// Set pointer to ROM Header by casting to struct
+	if(!TktlShared::ptr_vsm2_rom_header_)
+		TktlShared::ptr_vsm2_rom_header_ = (struct TktlVSM2ROMHeader *)TktlShared::ptr_vsm2_sdram_;
+
+	// Set pointer to word meta by casting to struct
+	if(!TktlShared::ptr_vsm2_word_meta_sdram_)
+		TktlShared::ptr_vsm2_word_meta_sdram_ = (struct TktlVSM2WordMeta *)(TktlShared::ptr_vsm2_sdram_ + sizeof(TktlVSM2ROMHeader));
+
+	// ROM word-count
+	if(TktlShared::vsm2_word_count_ == 0)
+		TktlShared::vsm2_word_count_ = TktlShared::ptr_vsm2_rom_header_->word_count;
+
+	// ROM Size
+	if(TktlShared::vsm2_rom_size_ == 0)
+		TktlShared::vsm2_rom_size_ = TktlShared::ptr_vsm2_rom_header_->rom_size;
+
+	// LPC Tables ID
+	if(TktlShared::vsm2_lpc_tables_id_ != 7)
+		TktlShared::vsm2_lpc_tables_id_ = TktlShared::ptr_vsm2_rom_header_->lpc_tables_id;
+
+} else {
+	LogTextMessage("Only one VSM2 ROM can be loaded at a time.\nThis object will reuse data loaded by the first instance of this object.");
+	LogTextMessage("Also note: this object is best used outside a polyphonic sub-patch.\n");
+	multiple_instance = true;
+};
+
+//////////////////////
+// Display ROM info //
+//////////////////////
+
+// Only show for first instance of object
+if(!multiple_instance) {
+	LogTextMessage("\nVSM2 ROM Information:");
+	LogTextMessage("Name: %s", TktlShared::ptr_vsm2_rom_header_->name);
+	LogTextMessage("Author: %s", TktlShared::ptr_vsm2_rom_header_->author);
+	LogTextMessage("Description: %s", TktlShared::ptr_vsm2_rom_header_->description);
+	LogTextMessage("Word count: %d\n", TktlShared::ptr_vsm2_rom_header_->word_count);
+
+	// Display extended info if attr set
+	if(attr_debug) {
+		LogTextMessage("Extended ROM Information:");
+		LogTextMessage("File-type: %s", TktlShared::ptr_vsm2_rom_header_->file_type);
+		LogTextMessage("VSM2 file version: %d.%d", TktlShared::ptr_vsm2_rom_header_->major_version, TktlShared::ptr_vsm2_rom_header_->point_version);
+		LogTextMessage("ROM size: %d bytes", TktlShared::ptr_vsm2_rom_header_->rom_size);
+		LogTextMessage("LPC data size: %d", TktlShared::ptr_vsm2_rom_header_->lpc_size);
+		LogTextMessage("LPC tables ID: %d", TktlShared::ptr_vsm2_rom_header_->lpc_tables_id);
+	};
+};
+
+//]]></code.init>
+   </obj.normal>
+</objdefs>

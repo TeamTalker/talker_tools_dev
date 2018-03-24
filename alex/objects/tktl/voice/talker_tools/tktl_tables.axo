@@ -1,0 +1,330 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="Talkie Tools Tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f">
+      <sDescription>Loads original Texas Instruments LPC coefficient tables.
+Part of the Talker Tools object set.</sDescription>
+      <author>toneburst</author>
+      <license>BSD</license>
+      <inlets>
+         <frac32buffer.positive name="TALKER" description="multiplexed lpc index values NOT AUDIO!!"/>
+         <bool32.risingfalling name="gate" description="gate passthrough"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="TALKER"/>
+         <bool32 name="gate" description="gate passthrough"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.tgl name="interpolation" description="frame interpolation on/off"/>
+         <int32 name="tables" description="LPC table-select (0 = auto-select)" noLabel="true">
+            <MinValue i="0"/>
+            <MaxValue i="8"/>
+         </int32>
+      </params>
+      <attribs/>
+      <file-depends>
+         <file-depend localFilename="data/lpc_tables.raw" targetPath="/shared/lpc/lpc_tables.raw"/>
+      </file-depends>
+      <depends>
+         <depend>fatfs</depend>
+      </depends>
+      <code.declaration><![CDATA[//
+
+bool disable;
+bool multiple_instance;
+uint8_t load_status;
+uint8_t tables;
+
+////////////////////////////
+////////////////////////////
+//// STRUCT DEFINITIONS ////
+////////////////////////////
+////////////////////////////
+
+// Struct pointer to hold data from LPC tables binary file copied to SDRAM
+struct LpcTables {
+    uint16_t    subtype;
+    uint8_t     num_k;
+    uint8_t     num_energy_bits;
+    uint8_t     num_pitch_bits;
+    uint8_t     num_k_bits[10];
+    uint8_t     table_energy[16];
+    uint8_t     table_pitch[64];
+    int16_t     table_k[10][32];
+    uint8_t     table_interp[8];
+} *ptr_lpc_tables_sdram_start, *ptr_lpc_tables_sdram;
+
+// Struct to hold frame data (current, previous frame)
+struct _lpcIndexValues {
+	int8_t	energy;
+	int8_t	pitch;
+	int16_t	kvals[10];	
+} lpc_frame_old, lpc_frame_new;
+
+///////////////////
+///////////////////
+//// Variables ////
+///////////////////
+///////////////////
+
+// Inter-frame interpolation position
+uint8_t interp_position;
+
+// Current interpolation coefficient from table
+uint8_t interp_coeff;
+
+// Interpolation inhibit flags
+bool unvoiced_flag_new;
+bool unvoiced_flag_old;
+bool silent_flag_new;
+bool silent_flag_old;
+bool interp_inhibit;
+
+///////////////
+// Functions //
+///////////////
+
+// Limit input to max value for 'bits' bits
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE uint8_t MaxValBits8(uint8_t val, uint8_t bits) {
+	uint8_t max = 1 << bits;
+	return(val <= max) ? val : max;
+}
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE void LPCTablesStatus(uint8_t index) {
+	switch(index) {
+		case 1 :		
+			LogTextMessage("LPC Tables selected: 0281A");
+			break;
+		case 2 :		
+			LogTextMessage("LPC Tables selected: 0281D");
+			break;
+		case 3 :		
+			LogTextMessage("LPC Tables selected: 2801A");
+			break;
+		case 4 :		
+			LogTextMessage("LPC Tables selected: M58817");
+			break;
+		case 5 :		
+			LogTextMessage("LPC Tables selected: 2802");
+			break;
+		case 6 :		
+			LogTextMessage("LPC Tables selected: 5110");
+			break;
+		case 7 :		
+			LogTextMessage("LPC Tables selected: 5201E");
+			break;
+		case 8 :		
+			LogTextMessage("LPC Tables selected: 5220");
+			break;
+	};
+};
+
+//]]></code.declaration>
+      <code.init><![CDATA[//
+
+LogTextMessage("\n//////////////////////////////////////////");
+LogTextMessage("// Initialising Talkie Tools LPC Tables //");
+LogTextMessage("//////////////////////////////////////////\n");
+
+////////////////////
+// Error-checking //
+////////////////////
+
+disable = false;
+load_status = 1;
+tables = 7;
+
+if(TktlShared::vsm2_word_count_ == 0) {
+	LogTextMessage("VSM2 ROM file not loaded, exiting");
+	disable = true;
+	return;	
+};
+
+/////////////////////////////
+// Zero frame data structs //
+/////////////////////////////
+
+lpc_frame_old			= {0};
+lpc_frame_new			= {0};
+
+interp_position		= 0;
+interp_coeff			= 0;
+
+unvoiced_flag_new		= false;
+unvoiced_flag_old		= false;
+silent_flag_new		= false;
+silent_flag_old		= false;
+interp_inhibit			= true;
+
+//////////////////////////////////////
+// Attempts to load vsm2 into sdram //
+//////////////////////////////////////
+
+// Check if file already copied to SDRAM
+// (pointer set in TktlShared class)
+if(!TktlShared::ptr_lpc_coef_tables_sdram_) {
+	
+	// Run file-loader (in incl. file) and save return-status
+	// Pointer to SDRAM data passed by reference
+	load_status = TktlLoadFileSDRAM("/shared/lpc/lpc_tables.raw", TktlShared::ptr_lpc_coef_tables_sdram_);
+
+	// Check return of file-loader function
+	if(load_status != 0) {
+		LogTextMessage("File-loader failed to load file to SDRAM, exiting");
+		return;
+	};	
+} else {
+	LogTextMessage("Reusing data loaded by the first instance of this object.");
+	multiple_instance = true;
+};
+
+// Copy pointer so we can increment pointer location for alternative tables
+ptr_lpc_tables_sdram_start = (struct LpcTables *)TktlShared::ptr_lpc_coef_tables_sdram_;
+ptr_lpc_tables_sdram = ptr_lpc_tables_sdram_start;
+
+LogTextMessage("LPC Tables ID: %d", TktlShared::vsm2_lpc_tables_id_);
+
+//]]></code.init>
+      <code.krate><![CDATA[//
+
+if(disable)
+	return;
+
+/////////////////////
+// Set table index //
+/////////////////////
+
+if(tables != param_tables) {
+	// Set table from inlet if set to 'auto'
+	if(param_tables == 0) {
+		ptr_lpc_tables_sdram = ptr_lpc_tables_sdram_start + TktlShared::vsm2_lpc_tables_id_;
+		// Log table ID to console
+		LPCTablesStatus(TktlShared::vsm2_lpc_tables_id_);
+	} else {
+		ptr_lpc_tables_sdram = ptr_lpc_tables_sdram_start + (param_tables - 1);
+		LPCTablesStatus(param_tables - 1);
+	};
+	tables = param_tables;	
+};
+
+///////////////////////
+//Interpolate frames //
+///////////////////////
+
+// Interpolation turn ON
+if(param_interpolation) {
+	
+	interp_position = inlet_TALKER[12];
+
+	// Extract current interpolation coefficient from table
+	interp_coeff = ptr_lpc_tables_sdram -> table_interp[interp_position];
+
+	switch(interp_position) {
+	
+		case 0 :		
+			// Set voiced/unvoiced flag for incoming frame
+			// Flag set if incoming pitch index = 0
+			unvoiced_flag_new = (!inlet_TALKER[1]) ? true : false;
+			// Calculate new silent flag (true if energy = 0)
+			silent_flag_new = (!inlet_TALKER[0]) ? true : false;
+
+			// Decide if interpolation is required for this frame
+			if (((!unvoiced_flag_old) && unvoiced_flag_new) || ((unvoiced_flag_old) && !unvoiced_flag_new) || ((silent_flag_old) && !silent_flag_new))
+				interp_inhibit = true;
+			else
+				// Normal frame, normal interpolation
+				interp_inhibit = false;
+
+				// Grab new (target) LPC values if interpolation not inhibited
+				lpc_frame_new.energy	= ptr_lpc_tables_sdram -> table_energy[MaxValBits8(inlet_TALKER[0],ptr_lpc_tables_sdram -> num_pitch_bits)];
+				lpc_frame_new.pitch		= ptr_lpc_tables_sdram -> table_pitch[MaxValBits8(inlet_TALKER[1], ptr_lpc_tables_sdram -> num_energy_bits)];
+				lpc_frame_new.kvals[0]	= ptr_lpc_tables_sdram -> table_k[0][MaxValBits8(inlet_TALKER[2],  ptr_lpc_tables_sdram -> num_k_bits[0])];
+				lpc_frame_new.kvals[1]	= ptr_lpc_tables_sdram -> table_k[1][MaxValBits8(inlet_TALKER[3],  ptr_lpc_tables_sdram -> num_k_bits[1])];
+				lpc_frame_new.kvals[2]	= ptr_lpc_tables_sdram -> table_k[2][MaxValBits8(inlet_TALKER[4],  ptr_lpc_tables_sdram -> num_k_bits[2])];
+				lpc_frame_new.kvals[3]	= ptr_lpc_tables_sdram -> table_k[3][MaxValBits8(inlet_TALKER[5],  ptr_lpc_tables_sdram -> num_k_bits[3])];
+				lpc_frame_new.kvals[4]	= ptr_lpc_tables_sdram -> table_k[4][MaxValBits8(inlet_TALKER[6],  ptr_lpc_tables_sdram -> num_k_bits[4])];
+				lpc_frame_new.kvals[5]	= ptr_lpc_tables_sdram -> table_k[5][MaxValBits8(inlet_TALKER[7],  ptr_lpc_tables_sdram -> num_k_bits[5])];
+				lpc_frame_new.kvals[6]	= ptr_lpc_tables_sdram -> table_k[6][MaxValBits8(inlet_TALKER[8],  ptr_lpc_tables_sdram -> num_k_bits[6])];
+				lpc_frame_new.kvals[7]	= ptr_lpc_tables_sdram -> table_k[7][MaxValBits8(inlet_TALKER[9],  ptr_lpc_tables_sdram -> num_k_bits[7])];
+				lpc_frame_new.kvals[8]	= ptr_lpc_tables_sdram -> table_k[8][MaxValBits8(inlet_TALKER[10], ptr_lpc_tables_sdram -> num_k_bits[8])];
+				lpc_frame_new.kvals[9]	= ptr_lpc_tables_sdram -> table_k[9][MaxValBits8(inlet_TALKER[11], ptr_lpc_tables_sdram -> num_k_bits[9])];			
+			break;
+
+		case 7 :
+			// Set voiced/unvoiced flag for next frame
+			unvoiced_flag_old = unvoiced_flag_new;
+			silent_flag_old = silent_flag_new;
+			
+			// Copy current frame to old frame
+			lpc_frame_old = lpc_frame_new;
+			
+			break;
+	};
+
+	/////////////////
+	// Set outlets //
+	/////////////////
+
+	// Interpolate values if interpolation not inhibited AND interpolation position < 8
+	if((interp_position < 8) && !interp_inhibit) {
+
+		outlet_TALKER[0]	= lpc_frame_old.energy   + ((lpc_frame_new.energy   - lpc_frame_old.energy)   >> interp_coeff);
+		outlet_TALKER[1]	= lpc_frame_old.pitch    + ((lpc_frame_new.pitch    - lpc_frame_old.pitch)    >> interp_coeff);
+		outlet_TALKER[2]	= lpc_frame_old.kvals[0] + ((lpc_frame_new.kvals[0] - lpc_frame_old.kvals[0]) >> interp_coeff);
+		outlet_TALKER[3]	= lpc_frame_old.kvals[1] + ((lpc_frame_new.kvals[1] - lpc_frame_old.kvals[1]) >> interp_coeff);
+		outlet_TALKER[4]	= lpc_frame_old.kvals[2] + ((lpc_frame_new.kvals[2] - lpc_frame_old.kvals[2]) >> interp_coeff);
+		outlet_TALKER[5]	= lpc_frame_old.kvals[3] + ((lpc_frame_new.kvals[3] - lpc_frame_old.kvals[3]) >> interp_coeff);
+		outlet_TALKER[6]	= lpc_frame_old.kvals[4] + ((lpc_frame_new.kvals[4] - lpc_frame_old.kvals[4]) >> interp_coeff);
+		outlet_TALKER[7]	= lpc_frame_old.kvals[5] + ((lpc_frame_new.kvals[5] - lpc_frame_old.kvals[5]) >> interp_coeff);
+		outlet_TALKER[8]	= lpc_frame_old.kvals[6] + ((lpc_frame_new.kvals[6] - lpc_frame_old.kvals[6]) >> interp_coeff);
+		outlet_TALKER[9]	= lpc_frame_old.kvals[7] + ((lpc_frame_new.kvals[7] - lpc_frame_old.kvals[7]) >> interp_coeff);
+		outlet_TALKER[10]	= lpc_frame_old.kvals[8] + ((lpc_frame_new.kvals[8] - lpc_frame_old.kvals[8]) >> interp_coeff);
+		outlet_TALKER[11]	= lpc_frame_old.kvals[9] + ((lpc_frame_new.kvals[9] - lpc_frame_old.kvals[9]) >> interp_coeff);
+
+	// Else set outlets to new frame (no interpolation)
+	} else {
+		outlet_TALKER[0]	= lpc_frame_new.energy;
+		outlet_TALKER[1]	= lpc_frame_new.pitch;
+		outlet_TALKER[2]	= lpc_frame_new.kvals[0];
+		outlet_TALKER[3]	= lpc_frame_new.kvals[1];
+		outlet_TALKER[4]	= lpc_frame_new.kvals[2];
+		outlet_TALKER[5]	= lpc_frame_new.kvals[3];
+		outlet_TALKER[6]	= lpc_frame_new.kvals[4];
+		outlet_TALKER[7]	= lpc_frame_new.kvals[5];
+		outlet_TALKER[8]	= lpc_frame_new.kvals[6];
+		outlet_TALKER[9]	= lpc_frame_new.kvals[7];
+		outlet_TALKER[10]	= lpc_frame_new.kvals[8];
+		outlet_TALKER[11]	= lpc_frame_new.kvals[9];
+	};
+
+// Interpolation turned OFF
+// Set outlet values directly from inlets
+} else {
+	
+	outlet_TALKER[0] =  ptr_lpc_tables_sdram -> table_energy[inlet_TALKER[0]];
+	outlet_TALKER[1] =  ptr_lpc_tables_sdram -> table_pitch[inlet_TALKER[1]];	
+	outlet_TALKER[2]  =  ptr_lpc_tables_sdram -> table_k[0][inlet_TALKER[2]];
+	outlet_TALKER[3]  =  ptr_lpc_tables_sdram -> table_k[1][inlet_TALKER[3]];
+	outlet_TALKER[4]  =  ptr_lpc_tables_sdram -> table_k[2][inlet_TALKER[5]];
+	outlet_TALKER[5]  =  ptr_lpc_tables_sdram -> table_k[3][inlet_TALKER[5]];
+	outlet_TALKER[6]  =  ptr_lpc_tables_sdram -> table_k[4][inlet_TALKER[6]];
+	outlet_TALKER[7]  =  ptr_lpc_tables_sdram -> table_k[5][inlet_TALKER[7]];
+	outlet_TALKER[8]  =  ptr_lpc_tables_sdram -> table_k[6][inlet_TALKER[8]];
+	outlet_TALKER[9]  =  ptr_lpc_tables_sdram -> table_k[7][inlet_TALKER[9]];
+	outlet_TALKER[10] =  ptr_lpc_tables_sdram -> table_k[8][inlet_TALKER[10]];
+	outlet_TALKER[11] =  ptr_lpc_tables_sdram -> table_k[9][inlet_TALKER[11]];
+};
+
+outlet_TALKER[12] = inlet_TALKER[12];
+outlet_TALKER[13] = inlet_TALKER[13];
+outlet_TALKER[14] = inlet_TALKER[14];
+outlet_TALKER[15] = inlet_TALKER[15];
+
+///////////////////////
+// Pass through gate //
+///////////////////////
+
+outlet_gate = inlet_gate;
+
+//]]></code.krate>
+   </obj.normal>
+</objdefs>
