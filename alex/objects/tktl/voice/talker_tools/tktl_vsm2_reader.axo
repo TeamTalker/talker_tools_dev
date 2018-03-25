@@ -50,6 +50,10 @@
             </CEntries>
          </combo>
       </attribs>
+      <file-depends>
+      	<!-- RAW tables file location and SD card upload path -->
+         <file-depend localFilename="data/lpc_tables.raw" targetPath="/shared/tktl/talker_tools/lpc_tables.raw"/>
+      </file-depends>
       <includes>
          <include>./inc/file_io.h</include>
          <include>./inc/lpc_stream.h</include>
@@ -340,11 +344,11 @@ for(int i = 0; i < 12; i++) {
 // Interpolation position outlet //
 ///////////////////////////////////
 
-outlet_TALKER[12] = interp_counter;
+outlet_TALKER[12] = interp_counter - 1;
 
 // Increment interpolation counter after setting outlet
 if(krate_counter % interp_divisor == 0) {
-	interp_counter = (interp_counter < 7) ? interp_counter + 1 : 7;
+	interp_counter = (interp_counter <= 7) ? interp_counter - 1 : 7;
 };
 
 ///////////////////////////////

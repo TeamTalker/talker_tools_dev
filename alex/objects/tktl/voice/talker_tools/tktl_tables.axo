@@ -34,11 +34,9 @@ bool multiple_instance;
 uint8_t load_status;
 uint8_t tables;
 
-////////////////////////////
-////////////////////////////
-//// STRUCT DEFINITIONS ////
-////////////////////////////
-////////////////////////////
+////////////////////////
+// STRUCT DEFINITIONS //
+////////////////////////
 
 // Struct pointer to hold data from LPC tables binary file copied to SDRAM
 struct LpcTables {
@@ -60,11 +58,9 @@ struct _lpcIndexValues {
 	int16_t	kvals[10];	
 } lpc_frame_old, lpc_frame_new;
 
-///////////////////
-///////////////////
-//// Variables ////
-///////////////////
-///////////////////
+///////////////
+// Variables //
+///////////////
 
 // Inter-frame interpolation position
 uint8_t interp_position;
@@ -87,8 +83,9 @@ bool interp_inhibit;
 __attribute__ ( ( always_inline ) ) __STATIC_INLINE uint8_t MaxValBits8(uint8_t val, uint8_t bits) {
 	uint8_t max = 1 << bits;
 	return(val <= max) ? val : max;
-}
+};
 
+// Print tables ID to console
 __attribute__ ( ( always_inline ) ) __STATIC_INLINE void LPCTablesStatus(uint8_t index) {
 	switch(index) {
 		case 1 :		
