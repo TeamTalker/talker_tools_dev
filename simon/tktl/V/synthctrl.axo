@@ -1,0 +1,88 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="synthctrl" uuid="e444050b-f5db-4cad-9ebf-9f6f25adea2b">
+      <sDescription>Synth Controller, connect to LPC Filter to control the filter directly. Chainable, the morp dial will always morph between the parameters on the module and the preceeding object.</sDescription>
+      <author>Team Talker</author>
+      <license>GPL</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKEr"/>
+         <bool32.risingfalling name="gate"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="TALKEr"/>
+      </outlets>
+      <displays/>
+      <params>
+         <frac32.u.map name="morph"/>
+         <bool32.tgl name="gate"/>
+         <frac32.u.map name="energy"/>
+         <frac32.u.map name="pitch"/>
+         <frac32.u.map name="k1"/>
+         <frac32.u.map name="k2"/>
+         <frac32.u.map name="k3"/>
+         <frac32.u.map name="k4"/>
+         <frac32.u.map name="k5"/>
+         <frac32.u.map name="k6"/>
+         <frac32.u.map name="k7"/>
+         <frac32.u.map name="k8"/>
+         <frac32.u.map name="k9"/>
+         <frac32.u.map name="k10"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[int32_t ccompl = 0;
+int32_t morph = 0;
+bool gate = 0;]]></code.declaration>
+      <code.krate><![CDATA[if (!param_morph) {
+	ccompl = 1<<9;
+	morph = 0;
+} else if (param_morph == 0x7ffffff) {
+	ccompl = 0;
+	morph = 1<<9;
+} else {
+ccompl = ((1<<9)-(param_morph>>18));
+morph = param_morph>>18;
+}
+int32_t a = (param_energy / 1177348) * ccompl + inlet_TALKEr[0] * morph;
+outlet_TALKEr[0] = a>>9;
+
+a = (param_pitch / 636102) * ccompl + inlet_TALKEr[1] * morph;
+outlet_TALKEr[1] = a>>9;
+
+a = (param_k1 / 134352 - 501) * ccompl + inlet_TALKEr[2] * morph;
+
+outlet_TALKEr[2] = a>>9;
+
+a = (param_k2 / 152174 - 376) * ccompl + inlet_TALKEr[3] * morph;
+outlet_TALKEr[3] = a>>9;
+
+a = (param_k3 / 160355 - 441) * ccompl + inlet_TALKEr[4] * morph;
+outlet_TALKEr[4] = a>>9;
+
+a = (param_k4 / 153391 - 369) * ccompl + inlet_TALKEr[5] * morph;
+outlet_TALKEr[5] = a>>9;
+
+a = (param_k5 / 192841 - 328) * ccompl + inlet_TALKEr[6] * morph;
+outlet_TALKEr[6] = a>>9;
+
+a = (param_k6 / 192013 - 290) * ccompl + inlet_TALKEr[7] * morph;
+outlet_TALKEr[7] = a>>9;
+
+a = (param_k7 / 187193 - 308) * ccompl + inlet_TALKEr[8] * morph;
+outlet_TALKEr[8] = a>>9;
+
+a = (param_k8 / 201831 - 256) * ccompl + inlet_TALKEr[9] * morph;
+outlet_TALKEr[9] = a>>9;
+
+a = (param_k9 / 238397 - 256) * ccompl + inlet_TALKEr[10] * morph;
+outlet_TALKEr[10] = a>>9;
+
+a = (param_k10 / 262143 - 205) * ccompl + inlet_TALKEr[11] * morph;
+outlet_TALKEr[11] = a>>9;
+
+outlet_TALKEr[12] = 0;
+if (inlet_gate | param_gate | inlet_TALKEr[13]) gate = true;
+else gate = false;
+outlet_TALKEr[13] = gate; 
+outlet_TALKEr[14] = 0;
+outlet_TALKEr[15] = 0;]]></code.krate>
+   </obj.normal>
+</objdefs>
