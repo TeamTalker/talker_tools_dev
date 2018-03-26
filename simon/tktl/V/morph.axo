@@ -1,0 +1,31 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="morph" uuid="2e18e4dd-708a-49b4-9515-f037392fc996">
+      <license>GPL</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKEr1"/>
+         <frac32buffer.bipolar name="TALKEr2"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="TALKEr"/>
+      </outlets>
+      <displays/>
+      <params>
+         <frac32.u.map name="morph" noLabel="true"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[int32_t ccompl = 0;
+int32_t morph = 0;]]></code.declaration>
+      <code.krate><![CDATA[if (!param_morph) {
+	ccompl = 1<<9;
+	morph = 0;
+} else if (param_morph == 0x7ffffff) {
+	ccompl = 0;
+	morph = 1<<9;
+} else {
+ccompl = ((1<<9)-(param_morph>>18));
+morph = param_morph>>18;
+}]]></code.krate>
+      <code.srate><![CDATA[int32_t a = inlet_TALKEr1 * ccompl + inlet_TALKEr2 * morph;
+outlet_TALKEr = a>>9;]]></code.srate>
+   </obj.normal>
+</objdefs>
