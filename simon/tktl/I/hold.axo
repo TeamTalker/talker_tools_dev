@@ -1,0 +1,107 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="hold" uuid="d76f3e12-7bd3-414f-a7f4-a692a4e8fd8e">
+      <license>GPL</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKEr"/>
+         <bool32.risingfalling name="hold"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="TALKEr"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.mom name="hold"/>
+         <bool32.tgl name="ENERGYi"/>
+         <bool32.tgl name="PITCHi"/>
+         <bool32.tgl name="K1i"/>
+         <bool32.tgl name="K2i"/>
+         <bool32.tgl name="K3i"/>
+         <bool32.tgl name="K4i"/>
+         <bool32.tgl name="K5i"/>
+         <bool32.tgl name="K6i"/>
+         <bool32.tgl name="K7i"/>
+         <bool32.tgl name="K8i"/>
+         <bool32.tgl name="K9i"/>
+         <bool32.tgl name="K10i"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[uint8_t hold_val[16];
+bool hold = false;]]></code.declaration>
+      <code.krate><![CDATA[if (param_hold | inlet_hold) hold = true;
+else hold = false;
+if (!hold) {
+	for(int i = 0; i < 16; i++) {
+		hold_val[i] = inlet_TALKEr[i];
+		outlet_TALKEr[i] = inlet_TALKEr[i];	
+	};
+	
+} else {
+
+	if (param_ENERGYi) outlet_TALKEr[0] = hold_val[0];
+	else {
+		outlet_TALKEr[0] = inlet_TALKEr[0];
+		hold_val[0] = inlet_TALKEr[0];
+		}
+	if (param_PITCHi) outlet_TALKEr[1] = hold_val[1];
+	else {
+		outlet_TALKEr[1] = inlet_TALKEr[1];
+		hold_val[1] = inlet_TALKEr[1];
+		}
+	if (param_K1i) outlet_TALKEr[2] = hold_val[2];
+	else {
+		outlet_TALKEr[2] = inlet_TALKEr[2];
+		hold_val[2] = inlet_TALKEr[2];
+	}
+	if (param_K2i) outlet_TALKEr[3] = hold_val[3];
+	else {
+		outlet_TALKEr[3] = inlet_TALKEr[3];
+		hold_val[3] = inlet_TALKEr[3];
+	}
+	if (param_K3i) outlet_TALKEr[4] = hold_val[4];
+	else {
+		outlet_TALKEr[4] = inlet_TALKEr[4];
+		hold_val[4] = inlet_TALKEr[4];
+	}
+	if (param_K4i) outlet_TALKEr[5] = hold_val[5];
+	else {
+		outlet_TALKEr[5] = inlet_TALKEr[5];
+		hold_val[5] = inlet_TALKEr[5];
+	}
+	if (param_K5i) outlet_TALKEr[6] = hold_val[6];
+	else {
+		outlet_TALKEr[6] = inlet_TALKEr[6];
+		hold_val[6] = inlet_TALKEr[6];
+	}
+	if (param_K6i) outlet_TALKEr[7] = hold_val[7];
+	else {
+		outlet_TALKEr[7] = inlet_TALKEr[7];
+		hold_val[7] = inlet_TALKEr[7];
+	}
+	if (param_K7i) outlet_TALKEr[8] = hold_val[8];
+	else {
+		outlet_TALKEr[8] = inlet_TALKEr[8];
+		hold_val[8] = inlet_TALKEr[8];
+	}
+	if (param_K8i) outlet_TALKEr[9] = hold_val[9];
+	else {
+		outlet_TALKEr[9] = inlet_TALKEr[9];
+		hold_val[9] = inlet_TALKEr[9];
+	}
+	if (param_K9i) outlet_TALKEr[10] = hold_val[10];
+	else {
+		outlet_TALKEr[10] = inlet_TALKEr[10];
+		hold_val[10] = inlet_TALKEr[10];
+	}
+	if (param_K10i) outlet_TALKEr[11] = hold_val[11];
+	else {
+		outlet_TALKEr[11] = inlet_TALKEr[11];
+		hold_val[11] = inlet_TALKEr[11];
+	}
+	//pass thru unaffected
+	outlet_TALKEr[12] = inlet_TALKEr[12];
+	outlet_TALKEr[13] = inlet_TALKEr[13];
+	outlet_TALKEr[14] = inlet_TALKEr[14];
+	outlet_TALKEr[15] = inlet_TALKEr[15];
+}]]></code.krate>
+   </obj.normal>
+</objdefs>
