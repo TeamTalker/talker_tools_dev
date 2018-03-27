@@ -5,7 +5,7 @@
       <license>BSD</license>
       <helpPatch>talker_tools.axh</helpPatch>
       <inlets>
-         <bool32 name="mode" description="mode-select (normal/circuit-bent)"/>
+         <int32.positive name="word" description="word-select"/>
          <bool32.risingfalling name="gate" description="play word"/>
          <frac32.positive name="rate" description="playback rate"/>
          <bool32.risingfalling name="loop" description="loop on/off"/>
@@ -19,18 +19,15 @@
          <frac32buffer name="tALKER" description="Talker Tools index connection (NOT AUDIO!)"/>
          <bool32 name="gate" description="gate signal out"/>
          <bool32.pulse name="wordend" description="pulse on word-end"/>
-         <int32 name="debug"/>
       </outlets>
       <displays/>
       <params>
-         <int32.hradio name="mode" description="word/bend mode-selection">
-            <MaxValue i="2"/>
-         </int32.hradio>
          <int32 name="word" description="word-select">
             <MinValue i="0"/>
             <MaxValue i="1024"/>
          </int32>
          <frac32.u.map name="rate" description="playback rate"/>
+         <frac32.u.map name="bend"/>
          <bool32.tgl name="loop" description="loop on/off"/>
          <bool32.tgl name="freeze" description="freeze"/>
          <bool32.mom name="step" description="step frame (only works in freeze mode)"/>
@@ -60,7 +57,6 @@
       </includes>
       <code.declaration><![CDATA[//
 
-
 ///////////////////////
 // Object state vars //
 ///////////////////////
@@ -89,13 +85,15 @@ uint32_t vsm2_rom_size;
 // Control vars //
 //////////////////
 
+bool mode;	// 'Normal' / 'Bent'
 bool gate;
 bool loop;
 bool glitch;
 bool freeze;
 bool step;
-bool set_jump;
+bool setjump;
 bool jump;
+
 bool word_end;
 bool word_gate;
 
@@ -117,7 +115,7 @@ uint32_t interp_divisor;
 
 // Playback rate
 uint32_t rate;
-uint32_t old_rate;
+uint32_t rate_old;
 
 ///////////////
 // Functions //
@@ -182,16 +180,17 @@ krate_divisor_freeze = 0;
 interp_divisor       = krate_divisor >> 4;
 
 // Default playback rate
-rate = krate_divisor;
-old_rate = rate;
+rate          = krate_divisor;
+rate_old      = rate;
 
+mode          = false;
 gate          = false;
 loop          = false;
 glitch        = false;
 freeze        = false;
 step          = false;
 jump          = false;
-set_jump      = false;
+setjump       = false;
 
 word_end      = false;
 word_gate     = true;
@@ -218,7 +217,7 @@ if(disable)
 // Update word selection //
 ///////////////////////////
 
-word_index_new = Max16(param_word, (word_count -1));
+word_index_new = Max16(param_word, (word_count -1) + inlet_word);
 
 if(word_index_new !=  word_index_old) {
 	ptr_vsm2_word_meta = ptr_vsm2_word_meta_start + word_index_new;
@@ -233,60 +232,27 @@ if(word_index_new !=  word_index_old) {
 // Original rate = 75 k-rate cycles (25ms)
 rate = __USAT(param_rate + inlet_rate, 27);
 
-if(rate != old_rate) {
+if(rate != rate_old) {
 	// Calculate new k-rate counter divisor
 	krate_divisor = MapU32(CurveLog32(rate), 480, 15);
 	// Calculate new inter-frame interpolation counter divisor
 	interp_divisor = Min32(krate_divisor >> 3, 1);
-	old_rate = rate;
+	rate_old = rate;
 }
 
-////////////////////////
-// Detect LOOP toggle //
-////////////////////////
-
-if(loop != param_loop) {
-	loop = param_loop;
-	get_frame.SetLoop(loop);
-};
-
-//////////////////////////
-// Detect GLITCH toggle //
-//////////////////////////
-
-if(glitch != param_glitch) {
-	glitch = param_glitch;
-	get_frame.SetGlitch(glitch);
-};
-
-//////////////////////////
-// Handle FREEZE toggle //
-//////////////////////////
-
-// Set freeze to false if this is first k-rate cycle
-// Allows first frame LPC to be captured, if patch starts with freeze on
-if(firstrun) {
-	freeze = false;
-	firstrun = false;
-} else {
-	freeze = param_freeze;
-};
-
-// Set k-rate divisor to high value if freeze
-// Prevents frame-update running
-krate_divisor_freeze = (freeze) ? krate_divisor_freeze = 4294967295 : krate_divisor;
-
-/////////////////////////////
-// Detect rising-edge GATE //
-/////////////////////////////
+/////////////////////
+/////////////////////
+//// Handle GATE ////
+/////////////////////
+/////////////////////
 
 if(inlet_gate) {
 	if(!gate) {
 		// Only reset counter to get new frame if freeze not enabled
-		// TODO: fix so that first frame is captured if patch starts with freeze on
+		// TODO: fix so that first frame is captured if patch starts with freeze ON
 		if(!freeze) {
 			get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
-			krate_counter = 1;
+			krate_counter = 0;
 			word_gate = true;
 		};
 	};
@@ -295,22 +261,57 @@ if(inlet_gate) {
 	gate = false;
 };
 
-//////////////////////////
-// Increment counter(s) //
-//////////////////////////
+/////////////////
+// Handle LOOP //
+/////////////////
 
-// Master K-Rate counter
-krate_counter = (krate_counter >= krate_divisor_freeze) ? 1 : krate_counter + 1;
+if(param_loop || inlet_loop) {
+	get_frame.SetLoop(true);
+	loop = true;
+} else {
+	get_frame.SetLoop(false);
+	loop = false;
+};
+
+///////////////////
+// Handle GLITCH //
+///////////////////
+
+if(param_glitch || inlet_glitch) {
+	get_frame.SetGlitch(true);
+	glitch = true;
+} else {
+	get_frame.SetGlitch(false);
+	glitch = false;
+};
+
+///////////////////
+// Handle FREEZE //
+///////////////////
+
+// Set freeze to false if this is first k-rate cycle
+// Allows first frame LPC to be captured, if patch starts with freeze on
+if(param_freeze || inlet_freeze) {
+	if(!firstrun) {
+		// Set k-rate divisor to high value if freeze
+		// Prevents frame-update running
+		krate_divisor_freeze = 4294967295;
+		freeze = true;
+	};
+} else {
+	krate_divisor_freeze = krate_divisor;
+	freeze = false;
+};
+
 
 /////////////////////////////
-// Detect rising-edge STEP //
+// Handle rising-edge STEP //
 /////////////////////////////
 
-if(param_step) {
-	if(!step) {
-		if(freeze) {
-			krate_counter = 1;
-		};
+if(param_step || inlet_step) {
+	if(!step && freeze) {
+		krate_counter = 0;
+		interp_counter = 0;
 		step = true;
 	};
 } else {
@@ -318,23 +319,23 @@ if(param_step) {
 };
 
 /////////////////////////////////
-// Detect rising-edge SET-JUMP //
+// Handle rising-edge SET-JUMP //
 /////////////////////////////////
 
-if(param_setjump) {
-	if(!set_jump) {
+if(param_setjump || inlet_setjump) {
+	if(!setjump) {
 		get_frame.SetJumpPoint();	
-		set_jump = true;
+		setjump = true;
 	};
 } else {
-	set_jump = false;
+	setjump = false;
 };
 
 /////////////////////////////
-// Detect rising-edge JUMP //
+// Handle rising-edge JUMP //
 /////////////////////////////
 
-if(param_jump) {
+if(param_jump || inlet_jump) {
 	if(!jump) {
 		get_frame.SetToJumpPoint();
 		krate_counter = 1;
@@ -350,7 +351,7 @@ if(param_jump) {
 //////////////////////////////
 //////////////////////////////
 
-if(krate_counter == 1) {
+if(krate_counter == 0) {
 	// Read word every 60 k-rate cycles
 	lpc_indices = get_frame.GetFrame();
 	
@@ -373,39 +374,38 @@ for(int i = 0; i < 12; i++) {
 	outlet_tALKER[i] = lpc_indices.indices_[i];
 };
 
-///////////////////////////////////
-// Interpolation position outlet //
-///////////////////////////////////
-
+// Interpolation position outlet
 outlet_tALKER[12] = interp_counter;
+
+// Other multiplexed outlets
+outlet_tALKER[13] = 0;
+outlet_tALKER[14] = 0;
+outlet_tALKER[15] = 0;
+
+// Set word-end outlet
+outlet_wordend = word_end;
+
+// Set gate outlet
+// (false if word-end true)
+outlet_gate =(!word_gate)? false : gate;
+
+//////////////////////////
+// Increment counter(s) //
+//////////////////////////
+
+// Master K-Rate counter
+krate_counter = (krate_counter >= krate_divisor_freeze) ? 0 : krate_counter + 1;
 
 // Increment interpolation counter after setting outlet
 if(krate_counter % interp_divisor == 0) {
 	interp_counter = (interp_counter <= 6) ? interp_counter + 1 : 7;
 };
 
-///////////////////////////////
-// Other multiplexed outlets //
-///////////////////////////////
+///////////////////////////
+// Update first-run flag //
+///////////////////////////
 
-outlet_tALKER[13] = 0;
-outlet_tALKER[14] = 0;
-outlet_tALKER[15] = 0;
-
-/////////////////////////
-// Set word-end outlet //
-/////////////////////////
-
-outlet_wordend = word_end;
-
-/////////////////////
-// Set gate outlet //
-/////////////////////
-
-// (false if word-end true)
-outlet_gate =(!word_gate)? false : gate;
-
-outlet_debug = interp_counter;
+firstrun = false;
 
 //]]></code.krate>
    </obj.normal>

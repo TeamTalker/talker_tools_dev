@@ -14,7 +14,7 @@ Part of the Talker Tools object set.</sDescription>
       </outlets>
       <displays/>
       <params>
-         <int32 name="tables" description="LPC table-select (0 = auto-select)" noLabel="true">
+         <int32 name="tables" description="LPC table-select (0 = auto-select)">
             <MinValue i="0"/>
             <MaxValue i="8"/>
          </int32>
@@ -225,7 +225,7 @@ if(tables != param_tables) {
 ///////////////////////
 
 // Interpolation turn ON
-if(param_interpolation == 1) {
+if(param_interpolation) {
 	
 	interp_position = inlet_tALKER[12];
 

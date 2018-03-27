@@ -84,14 +84,12 @@ public:
 
 class TktlGetLPCFrame {
 public:
+    
     // Constructor
     TktlGetLPCFrame();
     
     // Set pitch bit count
 	void SetPitchBits(uint8_t bits);
-    
-     // Get frame
-    TktlLpcIndices GetFrame();
     
     // Set word-start pointer
     void StartWord(uint8_t *ptr);
@@ -113,6 +111,13 @@ public:
     
     // Set play-head to jump-point
     void SetToJumpPoint();
+      
+	// Increment counters
+	// TODO
+    void tick();
+        
+     // Get frame
+    TktlLpcIndices GetFrame();
     
 private:
     uint8_t *ptr_word_start_;
@@ -121,19 +126,25 @@ private:
     bool frame_glitch_;
     uint8_t frame_repeat_;
     uint8_t frame_energy_;
+    uint8_t pitch_bits_;
     bool word_end_;
     
+    // Stream position object instance
     TktlLpcStreamPosition head_;
+    // LPC indices object instance
     TktlLpcIndices lpc_indices_;
-    
-    // Read LPC frame, updating index values in 'lpc_indices'
-    void ReadFrame();
     
     // Read bits from ROM
     uint8_t GetBits(uint8_t bits);
     
     // Reverse bits
     uint8_t ReverseBits(uint8_t byte);
+    
+    // Read LPC frame, updating index values in 'lpc_indices'
+    void ReadFrame();
+    
+    // TODO
+    void IncrementCounters();
 };
 
 #include "lpc_stream.cpp"
