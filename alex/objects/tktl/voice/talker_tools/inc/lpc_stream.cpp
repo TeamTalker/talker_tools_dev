@@ -91,6 +91,12 @@ TktlGetLPCFrame::TktlGetLPCFrame() {
     frame_repeat_ 	= 0;
     frame_energy_ 	= 1;
 	word_end_       = false;
+	pitch_bits_		= 6;	// Default VSM2
+};
+
+// Set pitch bit count
+void TktlGetLPCFrame::SetPitchBits(uint8_t bits) {
+	pitch_bits_ = bits;
 };
 
 // Get frame
@@ -98,13 +104,16 @@ TktlLpcIndices TktlGetLPCFrame::GetFrame() {
     // Reset word-end
     word_end_ = false;
     ReadFrame();
+    // Bit-shift pitch indices up by one, if there are only 5 bits for pitch
+    if(pitch_bits_ == 5)
+    	lpc_indices_.indices_[1] <<= 1;
     return lpc_indices_;
 };
 
 // Set word-start pointer
 void TktlGetLPCFrame::StartWord(uint8_t *ptr) {
     head_.SetWordStart(ptr);
-    read_word_ = true;
+    read_word_    = true;
 	frame_energy_ = 1;
 };
 
@@ -121,6 +130,7 @@ void TktlGetLPCFrame::SetGlitch(bool glitch) {
 // Stop reading frame data
 void TktlGetLPCFrame::StopRead() {
     read_word_ = false;
+    end_word_  = true;
     lpc_indices_.Silence();
 };
 
@@ -142,7 +152,7 @@ void TktlGetLPCFrame::SetToJumpPoint() {
 // Read word
 void TktlGetLPCFrame::ReadFrame() {
     // Speak if end of word not reached
-    if(frame_energy_ != 0xf) {
+    if(frame_energy_ != 0xf) && (read_word_) {
         frame_energy_ = GetBits(4);
         if (frame_energy_ == 0) {
             // Energy = 0: rest frame
@@ -154,6 +164,7 @@ void TktlGetLPCFrame::ReadFrame() {
                 frame_energy_ = 1;
             } else {
                 lpc_indices_.Silence();
+                read_word_ = false;
             };
             // Trigger word-end pulse
             word_end_ = true;

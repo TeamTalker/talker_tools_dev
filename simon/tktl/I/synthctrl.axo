@@ -4,11 +4,11 @@
       <author>Team Talker</author>
       <license>GPL</license>
       <inlets>
-         <frac32buffer.bipolar name="TALKEr"/>
+         <frac32buffer.positive name="tALKER"/>
          <bool32.risingfalling name="gate"/>
       </inlets>
       <outlets>
-         <frac32buffer.bipolar name="TALKEr"/>
+         <frac32buffer.positive name="tALKER"/>
       </outlets>
       <displays/>
       <params>
@@ -44,50 +44,50 @@ bool gate = 0;]]></code.declaration>
 ccompl = ((1<<9)-(param_morph>>18));
 morph = param_morph>>18;
 }
-int32_t a = ((param_ENERGYi) >> 23) * ccompl + inlet_TALKEr[0] * morph;
-outlet_TALKEr[0] = a>>9;
+int32_t a = ((param_ENERGYi) >> 23) * ccompl + inlet_tALKER[0] * morph;
+outlet_tALKER[0] = a>>9;
 if (param_pitchbits) {
-a = (param_PITCHi >> 21) * ccompl + inlet_TALKEr[1] * morph;
-outlet_TALKEr[1] = a>>9;
+a = (param_PITCHi >> 21) * ccompl + inlet_tALKER[1] * morph;
+outlet_tALKER[1] = a>>9;
 } else {
-a = (param_PITCHi >> 22) * ccompl + inlet_TALKEr[1] * morph;
-outlet_TALKEr[1] = a>>9;
+a = (param_PITCHi >> 22) * ccompl + inlet_tALKER[1] * morph;
+outlet_tALKER[1] = a>>9;
 }
-a = (param_K1i >> 22) * ccompl + inlet_TALKEr[2] * morph;
-outlet_TALKEr[2] = a>>9;
+a = (param_K1i >> 22) * ccompl + inlet_tALKER[2] * morph;
+outlet_tALKER[2] = a>>9;
 
-a = (param_K2i >> 22) * ccompl + inlet_TALKEr[3] * morph;
-outlet_TALKEr[3] = a>>9;
+a = (param_K2i >> 22) * ccompl + inlet_tALKER[3] * morph;
+outlet_tALKER[3] = a>>9;
 
-a = (param_K3i >> 23) * ccompl + inlet_TALKEr[4] * morph;
-outlet_TALKEr[4] = a>>9;
+a = (param_K3i >> 23) * ccompl + inlet_tALKER[4] * morph;
+outlet_tALKER[4] = a>>9;
 
-a = (param_K4i >> 23) * ccompl + inlet_TALKEr[5] * morph;
-outlet_TALKEr[5] = a>>9;
+a = (param_K4i >> 23) * ccompl + inlet_tALKER[5] * morph;
+outlet_tALKER[5] = a>>9;
 
-a = (param_K5i >> 23) * ccompl + inlet_TALKEr[6] * morph;
-outlet_TALKEr[6] = a>>9;
+a = (param_K5i >> 23) * ccompl + inlet_tALKER[6] * morph;
+outlet_tALKER[6] = a>>9;
 
-a = (param_K6i >> 23) * ccompl + inlet_TALKEr[7] * morph;
-outlet_TALKEr[7] = a>>9;
+a = (param_K6i >> 23) * ccompl + inlet_tALKER[7] * morph;
+outlet_tALKER[7] = a>>9;
 
-a = (param_K7i >> 23) * ccompl + inlet_TALKEr[8] * morph;
-outlet_TALKEr[8] = a>>9;
+a = (param_K7i >> 23) * ccompl + inlet_tALKER[8] * morph;
+outlet_tALKER[8] = a>>9;
 
-a = (param_K8i >> 24) * ccompl + inlet_TALKEr[9] * morph;
-outlet_TALKEr[9] = a>>9;
+a = (param_K8i >> 24) * ccompl + inlet_tALKER[9] * morph;
+outlet_tALKER[9] = a>>9;
 
-a = (param_K9i >> 24) * ccompl + inlet_TALKEr[10] * morph;
-outlet_TALKEr[10] = a>>9;
+a = (param_K9i >> 24) * ccompl + inlet_tALKER[10] * morph;
+outlet_tALKER[10] = a>>9;
 
-a = (param_K10i >> 24) * ccompl + inlet_TALKEr[11] * morph;
-outlet_TALKEr[11] = a>>9;
+a = (param_K10i >> 24) * ccompl + inlet_tALKER[11] * morph;
+outlet_tALKER[11] = a>>9;
 
-outlet_TALKEr[12] = 0;
-if (inlet_gate | param_gate | inlet_TALKEr[13]) gate = true;
+outlet_tALKER[12] = 0;
+if (inlet_gate | param_gate | inlet_tALKER[13]) gate = true;
 else gate = false;
-outlet_TALKEr[13] = gate; 
-outlet_TALKEr[14] = 0;
-outlet_TALKEr[15] = 0;]]></code.krate>
+outlet_tALKER[13] = gate; 
+outlet_tALKER[14] = 0;
+outlet_tALKER[15] = 0;]]></code.krate>
    </obj.normal>
 </objdefs>

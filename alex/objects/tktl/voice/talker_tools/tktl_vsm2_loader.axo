@@ -11,8 +11,8 @@ Part of the Talkie Tools object set.</sDescription>
       <displays/>
       <params/>
       <attribs>
-         <file name="rom"/>
-         <combo name="debug">
+         <file name="rom" description="select VSM2-format ROM file"/>
+         <combo name="debug" description="display extended info in console">
             <MenuEntries>
                <string>off</string>
                <string>on</string>
@@ -29,9 +29,11 @@ Part of the Talkie Tools object set.</sDescription>
       <code.declaration><![CDATA[//
 
 /*
-Struct/Class/function definitions moved to inc. file
-./inc/tktl_functions.h
-*/
+ * Load VSM2-format binary files
+ * 
+ * Struct/Class/function definitions in
+ * ./inc/file_io.h
+ */
 
 //////////
 // Vars //
@@ -46,6 +48,9 @@ uint8_t load_status;
 LogTextMessage("\n///////////////////////////////////////////////");
 LogTextMessage("// Initialising Talkie Tools VSM2 ROM Loader //");
 LogTextMessage("///////////////////////////////////////////////\n");
+
+if(attr_debug)
+	LogTextMessage("Extended information display on\n");
 	
 multiple_instance = false;
 
@@ -59,11 +64,10 @@ if(!TktlShared::ptr_vsm2_sdram_) {
 
 	// Run file-loader (in incl. file) and save return-status
 	// Pointer to SDRAM data passed by reference
-	load_status = TktlLoadFileSDRAM("attr_rom", TktlShared::ptr_vsm2_sdram_);
+	load_status = TktlLoadFileSDRAM("attr_rom", TktlShared::ptr_vsm2_sdram_, attr_debug);
 
 	// Check return of file-loader function
 	if(load_status != 0) {
-		LogTextMessage("File-loader failed to load file to SDRAM, exiting");
 		return;
 	};
 
@@ -91,8 +95,16 @@ if(!TktlShared::ptr_vsm2_sdram_) {
 	if(TktlShared::vsm2_lpc_tables_id_ != 7)
 		TktlShared::vsm2_lpc_tables_id_ = TktlShared::ptr_vsm2_rom_header_->lpc_tables_id;
 
+	// ROM pitch bit-count
+	if(TktlShared::vsm2_lpc_tables_id_ == 0) {
+		if((TktlShared::ptr_vsm2_rom_header_->lpc_tables_id == 5) || (TktlShared::ptr_vsm2_rom_header_->lpc_tables_id == 6))
+			TktlShared::rom_pitch_bits_ = 6;
+		else
+			TktlShared::rom_pitch_bits_ = 5;
+	};
+
 } else {
-	LogTextMessage("Only one VSM2 ROM can be loaded at a time.\nThis object will reuse data loaded by the first instance of this object.");
+	LogTextMessage("WARNING: Only one VSM2 ROM can be loaded at a time.\nThis object will reuse data loaded by the first instance of this object.");
 	LogTextMessage("Also note: this object is best used outside a polyphonic sub-patch.\n");
 	multiple_instance = true;
 };
@@ -107,7 +119,7 @@ if(!multiple_instance) {
 	LogTextMessage("Name: %s", TktlShared::ptr_vsm2_rom_header_->name);
 	LogTextMessage("Author: %s", TktlShared::ptr_vsm2_rom_header_->author);
 	LogTextMessage("Description: %s", TktlShared::ptr_vsm2_rom_header_->description);
-	LogTextMessage("Word count: %d\n", TktlShared::ptr_vsm2_rom_header_->word_count);
+	LogTextMessage("Word count: %d", TktlShared::ptr_vsm2_rom_header_->word_count);
 
 	// Display extended info if attr set
 	if(attr_debug) {
@@ -117,6 +129,7 @@ if(!multiple_instance) {
 		LogTextMessage("ROM size: %d bytes", TktlShared::ptr_vsm2_rom_header_->rom_size);
 		LogTextMessage("LPC data size: %d", TktlShared::ptr_vsm2_rom_header_->lpc_size);
 		LogTextMessage("LPC tables ID: %d", TktlShared::ptr_vsm2_rom_header_->lpc_tables_id);
+		LogTextMessage("LPC pitch bits count: %d", TktlShared::TktlShared::rom_pitch_bits_);
 	};
 };
 

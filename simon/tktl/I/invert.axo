@@ -2,11 +2,11 @@
    <obj.normal id="invert" uuid="5bf0313f-11cb-457c-af5c-daddaf5376eb">
       <license>GPL</license>
       <inlets>
-         <frac32buffer.bipolar name="TALKEr"/>
+         <frac32buffer.positive name="tALKER"/>
          <bool32.risingfalling name="invert"/>
       </inlets>
       <outlets>
-         <frac32buffer.bipolar name="TALKEr"/>
+         <frac32buffer.positive name="tALKER"/>
       </outlets>
       <displays/>
       <params>
@@ -29,40 +29,40 @@
       <code.krate><![CDATA[if (param_invert | inlet_invert) invert = true;
 else invert = false;
 if (invert) {
-if (param_ENERGYi) outlet_TALKEr[0] = 15 - inlet_TALKEr[0];
-else outlet_TALKEr[0] = inlet_TALKEr[0];
+if (param_ENERGYi) outlet_tALKER[0] = 15 - inlet_tALKER[0];
+else outlet_tALKER[0] = inlet_tALKER[0];
 //TODO add check in class for tindex != 7 to adjust inversion
-if (param_PITCHi) outlet_TALKEr[1] = 63 - inlet_TALKEr[1];
-else outlet_TALKEr[1] = inlet_TALKEr[1];
-if (param_K1i) outlet_TALKEr[2] = 31 - inlet_TALKEr[2];
-else outlet_TALKEr[2] = inlet_TALKEr[2];
-if (param_K2i) outlet_TALKEr[3] = 31 - inlet_TALKEr[3];
-else outlet_TALKEr[3] = inlet_TALKEr[3];
-if (param_K3i) outlet_TALKEr[4] = 15 - inlet_TALKEr[4];
-else outlet_TALKEr[4] = inlet_TALKEr[4];
-if (param_K4i) outlet_TALKEr[5] = 15 - inlet_TALKEr[5];
-else outlet_TALKEr[5] = inlet_TALKEr[5];
-if (param_K5i) outlet_TALKEr[6] = 15 - inlet_TALKEr[6];
-else outlet_TALKEr[6] = inlet_TALKEr[6];
-if (param_K6i) outlet_TALKEr[7] = 15 - inlet_TALKEr[7];
-else outlet_TALKEr[7] = inlet_TALKEr[7];
-if (param_K7i) outlet_TALKEr[8] = 15 - inlet_TALKEr[8];
-else outlet_TALKEr[8] = inlet_TALKEr[8];
-if (param_K8i) outlet_TALKEr[9] =  7 - inlet_TALKEr[9];
-else outlet_TALKEr[9] = inlet_TALKEr[9];
-if (param_K9i) outlet_TALKEr[10] = 7 - inlet_TALKEr[10];
-else outlet_TALKEr[10] = inlet_TALKEr[10];
-if (param_K10i) outlet_TALKEr[11] = 7 - inlet_TALKEr[11];
-else outlet_TALKEr[11] = inlet_TALKEr[11];
+if (param_PITCHi) outlet_tALKER[1] = 63 - inlet_tALKER[1];
+else outlet_tALKER[1] = inlet_tALKER[1];
+if (param_K1i) outlet_tALKER[2] = 31 - inlet_tALKER[2];
+else outlet_tALKER[2] = inlet_tALKER[2];
+if (param_K2i) outlet_tALKER[3] = 31 - inlet_tALKER[3];
+else outlet_tALKER[3] = inlet_tALKER[3];
+if (param_K3i) outlet_tALKER[4] = 15 - inlet_tALKER[4];
+else outlet_tALKER[4] = inlet_tALKER[4];
+if (param_K4i) outlet_tALKER[5] = 15 - inlet_tALKER[5];
+else outlet_tALKER[5] = inlet_tALKER[5];
+if (param_K5i) outlet_tALKER[6] = 15 - inlet_tALKER[6];
+else outlet_tALKER[6] = inlet_tALKER[6];
+if (param_K6i) outlet_tALKER[7] = 15 - inlet_tALKER[7];
+else outlet_tALKER[7] = inlet_tALKER[7];
+if (param_K7i) outlet_tALKER[8] = 15 - inlet_tALKER[8];
+else outlet_tALKER[8] = inlet_tALKER[8];
+if (param_K8i) outlet_tALKER[9] =  7 - inlet_tALKER[9];
+else outlet_tALKER[9] = inlet_tALKER[9];
+if (param_K9i) outlet_tALKER[10] = 7 - inlet_tALKER[10];
+else outlet_tALKER[10] = inlet_tALKER[10];
+if (param_K10i) outlet_tALKER[11] = 7 - inlet_tALKER[11];
+else outlet_tALKER[11] = inlet_tALKER[11];
 //pass thru unaffected
-outlet_TALKEr[12] = inlet_TALKEr[12];
-outlet_TALKEr[13] = inlet_TALKEr[13];
-outlet_TALKEr[14] = inlet_TALKEr[14];
-outlet_TALKEr[15] = inlet_TALKEr[15];
+outlet_tALKER[12] = inlet_tALKER[12];
+outlet_tALKER[13] = inlet_tALKER[13];
+outlet_tALKER[14] = inlet_tALKER[14];
+outlet_tALKER[15] = inlet_tALKER[15];
 } 
 else {
 	for(int i = 0; i < 16; i++) {
-		outlet_TALKEr[i] = inlet_TALKEr[i];	
+		outlet_tALKER[i] = inlet_tALKER[i];	
 	};
 }]]></code.krate>
    </obj.normal>

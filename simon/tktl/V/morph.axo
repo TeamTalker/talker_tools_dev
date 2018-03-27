@@ -24,7 +24,21 @@ int32_t morph = 0;]]></code.declaration>
 } else {
 ccompl = ((1<<9)-(param_morph>>18));
 morph = param_morph>>18;
+<<<<<<< HEAD
 }]]></code.krate>
+=======
+}
+for(int i = 0; i < 12; i++) {
+	int32_t a = inlet_TALKEr1[i] * ccompl + inlet_TALKEr2[i] * morph;
+outlet_TALKEr[i] = a>>9;
+}
+outlet_TALKEr[12] = inlet_TALKEr1[12];
+if( inlet_TALKEr1[13] | inlet_TALKEr2[13]) outlet_TALKEr[13] = 1;
+else outlet_TALKEr[13] = 0;
+if( inlet_TALKEr1[14] | inlet_TALKEr2[14]) outlet_TALKEr[14] = 1;
+else outlet_TALKEr[14] = 0;
+outlet_TALKEr[15] = inlet_TALKEr1[15];]]></code.krate>
+>>>>>>> master
       <code.srate><![CDATA[int32_t a = inlet_TALKEr1 * ccompl + inlet_TALKEr2 * morph;
 outlet_TALKEr = a>>9;]]></code.srate>
    </obj.normal>
