@@ -1,6 +1,6 @@
 <objdefs appVersion="1.0.12">
    <obj.normal id="synthctrl" uuid="e444050b-f5db-4cad-9ebf-9f6f25adea2b">
-      <sDescription>Synth Controller, connect to LPC Filter to control the filter directly. Chainable, the morp dial will always morph between the parameters on the module and the preceeding object.</sDescription>
+      <sDescription>Synth Controller, connect to LPC Filter to control the filter directly. Chainable, the morp dial will always morph between the parameters on the module and the preceeding object. Part of the Talker Tools.</sDescription>
       <author>Team Talker</author>
       <license>GPL</license>
       <inlets>

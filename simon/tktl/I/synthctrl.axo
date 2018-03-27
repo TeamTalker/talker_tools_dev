@@ -1,6 +1,6 @@
 <objdefs appVersion="1.0.12">
    <obj.normal id="synthctrl" uuid="93d23867-43ab-447b-a595-8c5b29ace0ba">
-      <sDescription>Synth Controller indices version, connect before Tables Module. Chainable, the morp dial will always morph between the parameters on the module and the preceeding object.</sDescription>
+      <sDescription>Synth Controller indices version, connect before Tables Module. Chainable, the morp dial will always morph between the parameters on the module and the preceeding object. Part of the Talker Tools</sDescription>
       <author>Team Talker</author>
       <license>GPL</license>
       <inlets>
@@ -16,9 +16,6 @@
          <bool32.tgl name="gate"/>
          <frac32.u.map name="ENERGYi"/>
          <frac32.u.map name="PITCHi"/>
-         <int32.hradio name="pitchbits">
-            <MaxValue i="2"/>
-         </int32.hradio>
          <frac32.u.map name="K1i"/>
          <frac32.u.map name="K2i"/>
          <frac32.u.map name="K3i"/>
@@ -46,13 +43,11 @@ morph = param_morph>>18;
 }
 int32_t a = ((param_ENERGYi) >> 23) * ccompl + inlet_tALKER[0] * morph;
 outlet_tALKER[0] = a>>9;
-if (param_pitchbits) {
+
 a = (param_PITCHi >> 21) * ccompl + inlet_tALKER[1] * morph;
 outlet_tALKER[1] = a>>9;
-} else {
-a = (param_PITCHi >> 22) * ccompl + inlet_tALKER[1] * morph;
-outlet_tALKER[1] = a>>9;
-}
+
+
 a = (param_K1i >> 22) * ccompl + inlet_tALKER[2] * morph;
 outlet_tALKER[2] = a>>9;
 

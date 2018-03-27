@@ -1,5 +1,7 @@
 <objdefs appVersion="1.0.12">
    <obj.normal id="invert" uuid="5bf0313f-11cb-457c-af5c-daddaf5376eb">
+      <sDescription>Inverts LPC indices, part of the Talker Tools</sDescription>
+      <author>Team Talker</author>
       <license>GPL</license>
       <inlets>
          <frac32buffer.positive name="tALKER"/>
@@ -31,7 +33,6 @@ else invert = false;
 if (invert) {
 if (param_ENERGYi) outlet_tALKER[0] = 15 - inlet_tALKER[0];
 else outlet_tALKER[0] = inlet_tALKER[0];
-//TODO add check in class for tindex != 7 to adjust inversion
 if (param_PITCHi) outlet_tALKER[1] = 63 - inlet_tALKER[1];
 else outlet_tALKER[1] = inlet_tALKER[1];
 if (param_K1i) outlet_tALKER[2] = 31 - inlet_tALKER[2];

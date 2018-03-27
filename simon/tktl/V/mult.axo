@@ -1,20 +1,22 @@
 <objdefs appVersion="1.0.12">
    <obj.normal id="mult" uuid="e196e0df-c099-4999-8f62-f329426741ff">
+      <sDescription>Multiplexer. Join values from a demultiplexer or use as input for a Talker Tools Synthctrl. Part of the Talker Tools.</sDescription>
+      <author>Team Talker</author>
       <license>GPL</license>
       <inlets>
          <frac32buffer.bipolar name="thru"/>
-         <frac32.positive name="ENERGY"/>
-         <frac32.positive name="PITCH"/>
-         <frac32.positive name="K1"/>
-         <frac32.positive name="K2"/>
-         <frac32.positive name="K3"/>
-         <frac32.positive name="K4"/>
-         <frac32.positive name="K5"/>
-         <frac32.positive name="K6"/>
-         <frac32.positive name="K7"/>
-         <frac32.positive name="K8"/>
-         <frac32.positive name="K9"/>
-         <frac32.positive name="K10"/>
+         <frac32.positive name="energy"/>
+         <frac32.positive name="pitch"/>
+         <frac32.positive name="k1"/>
+         <frac32.positive name="k2"/>
+         <frac32.positive name="k3"/>
+         <frac32.positive name="k4"/>
+         <frac32.positive name="k5"/>
+         <frac32.positive name="k6"/>
+         <frac32.positive name="k7"/>
+         <frac32.positive name="k8"/>
+         <frac32.positive name="k9"/>
+         <frac32.positive name="k10"/>
       </inlets>
       <outlets>
          <frac32buffer.bipolar name="TALKEr"/>
@@ -27,18 +29,18 @@ __attribute__ ( ( always_inline ) ) __STATIC_INLINE int16_t zeroMax16(int16_t va
 	return (val < 0) ? 0 : (val >= max) ? max : val;
 };]]></code.declaration>
       <code.krate><![CDATA[//receive energy pitch and filter coefficients, clamp to right range
-outlet_TALKEr[0]=zeroMax16(inlet_ENERGY>>21, 114);
-outlet_TALKEr[1]=zeroMax16(inlet_PITCH>>20, 211);
-outlet_TALKEr[2]=zeroMax16(inlet_K1>>18, 999) - 501;
-outlet_TALKEr[3]=zeroMax16(inlet_K2>>18, 882) - 376;
-outlet_TALKEr[4]=zeroMax16(inlet_K3>>18, 837) - 441;
-outlet_TALKEr[5]=zeroMax16(inlet_K4>>18, 875) - 369;
-outlet_TALKEr[6]=zeroMax16(inlet_K5>>18, 696) - 328;
-outlet_TALKEr[7]=zeroMax16(inlet_K6>>18, 699) - 290;
-outlet_TALKEr[8]=zeroMax16(inlet_K7>>18, 717) - 308;
-outlet_TALKEr[9]=zeroMax16(inlet_K8>>18, 665) - 256;
-outlet_TALKEr[10]=zeroMax16(inlet_K9>>18, 563) - 256;
-outlet_TALKEr[11]=zeroMax16(inlet_K10>>18, 512) - 205; 
+outlet_TALKEr[0]=zeroMax16(inlet_energy>>21, 114);
+outlet_TALKEr[1]=zeroMax16(inlet_pitch>>20, 211);
+outlet_TALKEr[2]=zeroMax16(inlet_k1>>18, 999) - 501;
+outlet_TALKEr[3]=zeroMax16(inlet_k2>>18, 882) - 376;
+outlet_TALKEr[4]=zeroMax16(inlet_k3>>18, 837) - 441;
+outlet_TALKEr[5]=zeroMax16(inlet_k4>>18, 875) - 369;
+outlet_TALKEr[6]=zeroMax16(inlet_k5>>18, 696) - 328;
+outlet_TALKEr[7]=zeroMax16(inlet_k6>>18, 699) - 290;
+outlet_TALKEr[8]=zeroMax16(inlet_k7>>18, 717) - 308;
+outlet_TALKEr[9]=zeroMax16(inlet_k8>>18, 665) - 256;
+outlet_TALKEr[10]=zeroMax16(inlet_k9>>18, 563) - 256;
+outlet_TALKEr[11]=zeroMax16(inlet_k10>>18, 512) - 205; 
 //receive rest of data from thru port
 outlet_TALKEr[12]=inlet_thru[12];
 outlet_TALKEr[13]=inlet_thru[13];

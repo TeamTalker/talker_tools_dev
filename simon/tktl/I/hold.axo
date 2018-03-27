@@ -1,5 +1,7 @@
 <objdefs appVersion="1.0.12">
    <obj.normal id="hold" uuid="d76f3e12-7bd3-414f-a7f4-a692a4e8fd8e">
+      <sDescription>Hold selected indices when hold inlet or param is high. Part of the Talker Tools.</sDescription>
+      <author>Team Talker</author>
       <license>GPL</license>
       <inlets>
          <frac32buffer.positive name="tALKER"/>
