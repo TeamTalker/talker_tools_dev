@@ -6,8 +6,8 @@
 //  Copyright © 2018 alx. All rights reserved.
 //
 
-#ifndef LPC_STREAM_H
-#define LPC_STREAM_H
+#ifndef TKTL_LPC_STREAM_H
+#define TKTL_LPC_STREAM_H
 
 /////////////////
 // LPC indices //
@@ -87,6 +87,9 @@ public:
     // Constructor
     TktlGetLPCFrame();
     
+    // Set pitch bit count
+	void SetPitchBits(uint8_t bits);
+    
      // Get frame
     TktlLpcIndices GetFrame();
     
@@ -135,5 +138,5 @@ private:
 
 #include "lpc_stream.cpp"
 
-#endif /* LPC_STREAM_H */
+#endif /* TKTL_LPC_STREAM_H */
 

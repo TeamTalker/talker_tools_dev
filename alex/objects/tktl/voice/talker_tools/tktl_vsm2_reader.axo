@@ -16,7 +16,7 @@
          <bool32.risingfalling name="glitch" description="glitch"/>
       </inlets>
       <outlets>
-         <frac32buffer name="TALKER" description="Talker Tools index connection (NOT AUDIO!)"/>
+         <frac32buffer name="tALKER" description="Talker Tools index connection (NOT AUDIO!)"/>
          <bool32 name="gate" description="gate signal out"/>
          <bool32.pulse name="wordend" description="pulse on word-end"/>
          <int32 name="debug"/>
@@ -39,7 +39,7 @@
          <bool32.mom name="glitch" description="glitch on/off"/>
       </params>
       <attribs>
-         <combo name="debug">
+         <combo name="debug" description="display extended info in console">
             <MenuEntries>
                <string>off</string>
                <string>on</string>
@@ -51,7 +51,6 @@
          </combo>
       </attribs>
       <file-depends>
-      	<!-- RAW tables file location and SD card upload path -->
          <file-depend localFilename="data/lpc_tables.raw" targetPath="/shared/tktl/talker_tools/lpc_tables.raw"/>
       </file-depends>
       <includes>
@@ -61,16 +60,34 @@
       </includes>
       <code.declaration><![CDATA[//
 
+
+///////////////////////
+// Object state vars //
+///////////////////////
+
 bool disable;
 bool firstrun;
+
+///////////////
+// Word vars //
+///////////////
 
 uint16_t word_count;
 uint32_t word_index_new;
 uint32_t word_index_old;
 
+/////////////
+// Structs //
+/////////////
+
+// Structs defined in ./inc/file_io.h
 struct TktlVSM2WordMeta *ptr_vsm2_word_meta_start;
 struct TktlVSM2WordMeta *ptr_vsm2_word_meta;
 uint32_t vsm2_rom_size;
+
+//////////////////
+// Control vars //
+//////////////////
 
 bool gate;
 bool loop;
@@ -82,12 +99,18 @@ bool jump;
 bool word_end;
 bool word_gate;
 
+//////////////
+// Counters //
+//////////////
+
 // K-rate cycle-counter
 uint32_t krate_counter;
+
 // Division of k-rate cycles
 // (determines playback-rate)
 uint32_t krate_divisor;
 uint32_t krate_divisor_freeze;
+
 // Divisor and counter for interframe interpolation
 uint32_t interp_counter;
 uint32_t interp_divisor;
@@ -96,21 +119,24 @@ uint32_t interp_divisor;
 uint32_t rate;
 uint32_t old_rate;
 
-
 ///////////////
 // Functions //
 ///////////////
 
-// Check include-file ./inc/tktl_functions.h
+// Check include-file ./inc/tfile_io.h
 // TktlDisplayWordMeta();
 
 /////////////
 // Classes //
 /////////////
 
-//Check include-files ./inc/
+// Check include-file ./inc/file_io.h
 
-// Instantiate Stream-Reader object
+//////////////////////////////////////
+// Instantiate Stream-Reader object //
+//////////////////////////////////////
+
+// Object defined in ./inc/lpc_stream.h
 TktlGetLPCFrame get_frame;
 TktlLpcIndices lpc_indices;
 
@@ -121,6 +147,9 @@ LogTextMessage("\n//////////////////////////////////////////");
 LogTextMessage("// Initialising Talkie Tools ROM Reader //");
 LogTextMessage("//////////////////////////////////////////\n");
 
+if(attr_debug)
+	LogTextMessage("Extended information display on\n");
+
 ////////////////////
 // Error-checking //
 ////////////////////
@@ -129,9 +158,11 @@ disable = false;
 firstrun = true;
 
 if(TktlShared::vsm2_word_count_ == 0) {
-	LogTextMessage("VSM2 ROM file not loaded, exiting");
+	LogTextMessage("ERROR: VSM2 ROM file not loaded, exiting");
 	disable = true;
 	return;	
+} else {
+	LogTextMessage("Done...");
 };
 
 //////////////////////
@@ -164,6 +195,8 @@ set_jump      = false;
 
 word_end      = false;
 word_gate     = true;
+
+get_frame.SetPitchBits(TktlShared::rom_pitch_bits_);
 
 ///////////////////////
 // Display Word Meta //
@@ -208,25 +241,6 @@ if(rate != old_rate) {
 	old_rate = rate;
 }
 
-/////////////////////////////
-// Detect rising-edge GATE //
-/////////////////////////////
-
-if(inlet_gate) {
-	if(!gate) {
-		// Only reset counter to get new frame if freeze not enabled
-		// TODO: fix so that first frame is captured if patch starts with freeze on
-		if(!freeze) {
-			get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
-			krate_counter = 1;
-			word_gate = true;
-		};
-	};
-	gate = true;
-} else {
-	gate = false;
-};
-
 ////////////////////////
 // Detect LOOP toggle //
 ////////////////////////
@@ -261,6 +275,25 @@ if(firstrun) {
 // Set k-rate divisor to high value if freeze
 // Prevents frame-update running
 krate_divisor_freeze = (freeze) ? krate_divisor_freeze = 4294967295 : krate_divisor;
+
+/////////////////////////////
+// Detect rising-edge GATE //
+/////////////////////////////
+
+if(inlet_gate) {
+	if(!gate) {
+		// Only reset counter to get new frame if freeze not enabled
+		// TODO: fix so that first frame is captured if patch starts with freeze on
+		if(!freeze) {
+			get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
+			krate_counter = 1;
+			word_gate = true;
+		};
+	};
+	gate = true;
+} else {
+	gate = false;
+};
 
 //////////////////////////
 // Increment counter(s) //
@@ -337,27 +370,27 @@ if(krate_counter == 1) {
 
 // LPC indices
 for(int i = 0; i < 12; i++) {
-	outlet_TALKER[i] = lpc_indices.indices_[i];
+	outlet_tALKER[i] = lpc_indices.indices_[i];
 };
 
 ///////////////////////////////////
 // Interpolation position outlet //
 ///////////////////////////////////
 
-outlet_TALKER[12] = interp_counter - 1;
+outlet_tALKER[12] = interp_counter;
 
 // Increment interpolation counter after setting outlet
 if(krate_counter % interp_divisor == 0) {
-	interp_counter = (interp_counter <= 7) ? interp_counter - 1 : 7;
+	interp_counter = (interp_counter <= 6) ? interp_counter + 1 : 7;
 };
 
 ///////////////////////////////
 // Other multiplexed outlets //
 ///////////////////////////////
 
-outlet_TALKER[13] = 0;
-outlet_TALKER[14] = 0;
-outlet_TALKER[15] = 0;
+outlet_tALKER[13] = 0;
+outlet_tALKER[14] = 0;
+outlet_tALKER[15] = 0;
 
 /////////////////////////
 // Set word-end outlet //
