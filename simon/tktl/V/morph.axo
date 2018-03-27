@@ -1,0 +1,41 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="morph" uuid="2e18e4dd-708a-49b4-9515-f037392fc996">
+      <license>GPL</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKEr1"/>
+         <frac32buffer.bipolar name="TALKEr2"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="TALKEr"/>
+      </outlets>
+      <displays/>
+      <params>
+         <frac32.u.map name="morph" noLabel="true"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[int32_t ccompl = 0;
+int32_t morph = 0;]]></code.declaration>
+      <code.krate><![CDATA[if (!param_morph) {
+	ccompl = 1<<9;
+	morph = 0;
+} else if (param_morph == 0x7ffffff) {
+	ccompl = 0;
+	morph = 1<<9;
+} else {
+ccompl = ((1<<9)-(param_morph>>18));
+morph = param_morph>>18;
+}
+for(int i = 0; i < 12; i++) {
+	int32_t a = inlet_TALKEr1[i] * ccompl + inlet_TALKEr2[i] * morph;
+outlet_TALKEr[i] = a>>9;
+}
+outlet_TALKEr[12] = inlet_TALKEr1[12];
+if( inlet_TALKEr1[13] | inlet_TALKEr2[13]) outlet_TALKEr[13] = 1;
+else outlet_TALKEr[13] = 0;
+if( inlet_TALKEr1[14] | inlet_TALKEr2[14]) outlet_TALKEr[14] = 1;
+else outlet_TALKEr[14] = 0;
+outlet_TALKEr[15] = inlet_TALKEr1[15];]]></code.krate>
+      <code.srate><![CDATA[int32_t a = inlet_TALKEr1 * ccompl + inlet_TALKEr2 * morph;
+outlet_TALKEr = a>>9;]]></code.srate>
+   </obj.normal>
+</objdefs>
