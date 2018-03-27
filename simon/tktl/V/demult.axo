@@ -1,0 +1,44 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="demult" uuid="99e3731c-6317-4348-94d3-e5301af994d3">
+      <license>GPL</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKEr"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="thru"/>
+         <frac32.positive name="ENERGY"/>
+         <frac32.positive name="PITCH"/>
+         <frac32.positive name="K1"/>
+         <frac32.positive name="K2"/>
+         <frac32.positive name="K3"/>
+         <frac32.positive name="K4"/>
+         <frac32.positive name="K5"/>
+         <frac32.positive name="K6"/>
+         <frac32.positive name="K7"/>
+         <frac32.positive name="K8"/>
+         <frac32.positive name="K9"/>
+         <frac32.positive name="K10"/>
+      </outlets>
+      <displays/>
+      <params/>
+      <attribs/>
+      <code.krate><![CDATA[//break out relevant data, energy pitch and filter coefficients
+outlet_ENERGY = inlet_TALKEr[0]<<21;
+outlet_PITCH = inlet_TALKEr[1]<<20;
+outlet_K1 = (inlet_TALKEr[2] + 501)<<18;
+outlet_K2 = (inlet_TALKEr[3] + 376)<<18;
+outlet_K3 = (inlet_TALKEr[4] + 441)<<18;
+outlet_K4 = (inlet_TALKEr[5] + 369)<<18;
+outlet_K5 = (inlet_TALKEr[6] + 328)<<18;
+outlet_K6 = (inlet_TALKEr[7] + 290)<<18;
+outlet_K7 = (inlet_TALKEr[8] + 308)<<18;
+outlet_K8 = (inlet_TALKEr[9] + 256)<<18;
+outlet_K9 = (inlet_TALKEr[10] + 256)<<18;
+outlet_K10 = (inlet_TALKEr[11] + 205)<<18;
+//send internal data through
+outlet_thru[12] = inlet_TALKEr[12];
+outlet_thru[13] = inlet_TALKEr[13];
+outlet_thru[14] = inlet_TALKEr[14];
+outlet_thru[15] = inlet_TALKEr[15];]]></code.krate>
+   </obj.normal>
+</objdefs>
