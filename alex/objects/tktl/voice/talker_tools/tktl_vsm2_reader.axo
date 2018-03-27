@@ -1,7 +1,8 @@
 <objdefs appVersion="1.0.12">
-   <obj.normal id="tktl_vsm2_reader" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb">
-      <sDescription>Part of the Talkie Tools object set.</sDescription>
-      <author>Talker Tools</author>
+   <obj.normal id="tktl reader vsm2" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb">
+      <sDescription>Read LPC data-stream from VSM2-format ROM files loaded by the tktl loader vsm2 object.
+Part of the Talkie Tools object set.</sDescription>
+      <author>Team Talker</author>
       <license>BSD</license>
       <helpPatch>talker_tools.axh</helpPatch>
       <inlets>
@@ -47,9 +48,6 @@
             </CEntries>
          </combo>
       </attribs>
-      <file-depends>
-         <file-depend localFilename="data/lpc_tables.raw" targetPath="/shared/tktl/talker_tools/lpc_tables.raw"/>
-      </file-depends>
       <includes>
          <include>./inc/file_io.h</include>
          <include>./inc/lpc_stream.h</include>
@@ -158,7 +156,7 @@ firstrun = true;
 if(TktlShared::vsm2_word_count_ == 0) {
 	LogTextMessage("ERROR: VSM2 ROM file not loaded, exiting");
 	disable = true;
-	return;	
+	return;
 } else {
 	LogTextMessage("Done...");
 };
@@ -221,7 +219,7 @@ word_index_new = Max16(param_word, (word_count -1) + inlet_word);
 
 if(word_index_new !=  word_index_old) {
 	ptr_vsm2_word_meta = ptr_vsm2_word_meta_start + word_index_new;
-	TktlDisplayWordMeta(attr_debug, word_index_new, ptr_vsm2_word_meta);	
+	TktlDisplayWordMeta(attr_debug, word_index_new, ptr_vsm2_word_meta);
 	word_index_old = word_index_new;
 };
 
@@ -324,7 +322,7 @@ if(param_step || inlet_step) {
 
 if(param_setjump || inlet_setjump) {
 	if(!setjump) {
-		get_frame.SetJumpPoint();	
+		get_frame.SetJumpPoint();
 		setjump = true;
 	};
 } else {
@@ -354,13 +352,13 @@ if(param_jump || inlet_jump) {
 if(krate_counter == 0) {
 	// Read word every 60 k-rate cycles
 	lpc_indices = get_frame.GetFrame();
-	
+
 	// Zero interpolation counter
 	interp_counter = 0;
 
 	// Check for word-end
 	word_end = get_frame.CheckForWordEnd();
-	
+
 	if(word_end && !loop)
 		word_gate = false;
 };

@@ -1,0 +1,788 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl_reader_OLD" uuid="a5a7a28f-6865-4289-8161-54904e45ef34">
+      <sDescription>read from table, nearest neighbour</sDescription>
+      <author>toneburst</author>
+      <license>BSD</license>
+      <helpPatch>table.axh</helpPatch>
+      <inlets>
+         <int32.positive name="pbits" description="number of pitch bits (from ROM Loader)"/>
+         <bool32 name="mode" description="standard/bent mode"/>
+         <bool32.risingfalling name="gate" description="play word"/>
+         <frac32.positive name="bank" description="bank-select"/>
+         <frac32.positive name="word" description="word-select"/>
+         <frac32.positive name="rate" description="playback rate"/>
+         <bool32.risingfalling name="loop" description="loop playback on/off"/>
+         <bool32.risingfalling name="freeze" description="freeze playback on/off"/>
+         <bool32.rising name="step" description="step frame (with freeze on)"/>
+         <bool32.rising name="rmark" description="set reset-mark"/>
+         <bool32.rising name="rjump" description="jump back to reset mark"/>
+         <bool32.risingfalling name="glitch" description="circuit-bend"/>
+      </inlets>
+      <outlets>
+         <bool32 name="gate" description="gate output"/>
+         <int32.positive name="ENERGYi" description="synth energy (level)"/>
+         <int32.positive name="PITCHi" description="synth pitch"/>
+         <int32.positive name="K1i" description="lattice filter band 1 lookup table index"/>
+         <int32.positive name="K2i" description="lattice filter band 2 lookup table index"/>
+         <int32.positive name="K3i" description="lattice filter band 3 lookup table index"/>
+         <int32.positive name="K4i" description="lattice filter band 4 lookup table index"/>
+         <int32.positive name="K5i" description="lattice filter band 5 lookup table index"/>
+         <int32.positive name="K6i" description="lattice filter band 6 lookup table index"/>
+         <int32.positive name="K7i" description="lattice filter band 7 lookup table index"/>
+         <int32.positive name="K8i" description="lattice filter band 8 lookup table index"/>
+         <int32.positive name="K9i" description="lattice filter band 9 lookup table index"/>
+         <int32.positive name="K10i" description="lattice filter band 10 lookup table index"/>
+         <int32.positive name="ipos" description="inter-frame interpolation index"/>
+         <int32.positive name="tindex" description="table index (for Tables object)"/>
+      </outlets>
+      <displays/>
+      <params>
+         <int32.hradio name="mode" description="mode-select (normal/circuit-bent)">
+            <MaxValue i="2"/>
+         </int32.hradio>
+         <frac32.u.map name="bank" description="bank-select (A to D)"/>
+         <frac32.u.map name="word" description="word-select"/>
+         <frac32.u.map name="rate" description="playback rate (32 is approximately original rate)"/>
+         <bool32.tgl name="loop" description="loop on/off"/>
+         <bool32.tgl name="freeze" description="freeze playback"/>
+         <bool32.mom name="step" description="step frame (if freeze on)"/>
+         <bool32.mom name="rmark" description="set reset-mark"/>
+         <bool32.mom name="rjump" description="jump back to reset-mark"/>
+         <bool32.mom name="glitch" description="momentary glitch"/>
+      </params>
+      <attribs>
+         <objref name="table" description="name of ROM Loader object [required]"/>
+      </attribs>
+      <code.declaration><![CDATA[//
+      
+////////////////////////////
+////////////////////////////
+//// STRUCT DEFINITIONS ////
+////////////////////////////
+////////////////////////////
+
+// Holds LPC table index values
+struct LpcIndices {
+	uint8_t energyindex;
+	uint8_t pitchindex;
+	uint8_t k1index;
+	uint8_t k2index;
+	uint8_t k3index;
+	uint8_t k4index;
+	uint8_t k5index;
+	uint8_t k6index;
+	uint8_t k7index;
+	uint8_t k8index;
+	uint8_t k9index;
+	uint8_t k10index;
+};
+
+#define NUM_WORD_FRAGMENTS 10
+
+// Word meta-data
+struct WordData {
+	// 9 character string (10th char terminates)
+	unsigned char spelling[10];
+	// Array of LPC data addresses for word/phrase
+	// (Max 10 fragments)
+	uint16_t lpc[NUM_WORD_FRAGMENTS];	
+};
+
+// Pointer to word LPC data
+struct LpcPtr {
+	// Word/phrase part index
+	// Some 'words' actually composed of several words or parts of words.
+	// This variable stores current fragment index
+	uint8_t fragment;
+	// Pointer to ROM array byte
+	uint8_t *byte;
+	// Current bit of byte
+	uint8_t  bit;
+};
+
+///////////////////////
+///////////////////////
+//// DEFINE TABLES ////
+///////////////////////
+///////////////////////
+
+// Character-map
+// From https://dl.dropboxusercontent.com/u/79094972/s%2Bs_vsmparse.c
+// Thanks Lord Nightmare!
+const unsigned char kTiToAscii[256] = {
+    0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, // abcdefgh
+    0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, // ijklmnop
+    0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, // qrstuvwx
+    0x79, 0x7A, 0x27, 0x20, 0x5F, 0x2B, 0x2D, 0x20, // yz' _+-
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, // 01234567
+    0x38, 0x39, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // 89!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // !!!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // !!!!!!!!
+    0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, // abcdefgh
+    0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, // ijklmnop
+    0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, // qrstuvwx
+    0x79, 0x7A, 0x27, 0x20, 0x5F, 0x2B, 0x2D, 0x20, // yz' _+-
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, // 01234567
+    0x38, 0x39, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // 89!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // !!!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // !!!!!!!!
+    // Below this point has 0x80 set (syllable bit), represented as CAPITAL letters.
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, // ABCDEFGH
+    0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, // IJKLMNOP
+    0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, // QRSTUVWX
+    0x59, 0x5A, 0x27, 0x20, 0x5F, 0x2B, 0x2D, 0x20, // YZ' _+-
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, // 01234567
+    0x38, 0x39, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // 89!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // !!!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // !!!!!!!!
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, // ABCDEFGH
+    0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, // IJKLMNOP
+    0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, // QRSTUVWX
+    0x59, 0x5A, 0x27, 0x20, 0x5F, 0x2B, 0x2D, 0x20, // YZ' _+-
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, // 01234567
+    0x38, 0x39, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // 89!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, // !!!!!!!!
+    0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21  // !!!!!!!!
+};
+
+/////////////////////
+/////////////////////
+//// GLOBAL VARS ////
+/////////////////////
+/////////////////////
+
+// Pointer to start of ROM data in SDRAM
+uint8_t *rom_start_ptr = NULL;
+
+// Word-counts of banks A - D
+uint8_t bank_count[4];
+
+// Addresses of word-lists for banks A - D
+uint16_t word_list_ptr[4];
+
+// Current playback position in bitstream
+LpcPtr play_head;
+
+// Start of current word/phrase (for loop reset)
+LpcPtr word_start;
+
+// Position to reset to on rising edge 'reset_jump' inlet/param
+LpcPtr jump_position;
+
+// Trigger vars for reset-point mark and jump
+bool reset_mark;
+bool reset_jump;
+
+// Records playhead position when glitch enabled
+// and position to reset to on falling edge glitch inlet/param
+LpcPtr glitch_position;
+
+// K-rate cycle-counter
+uint16_t krate_counter;
+// Division of k-rate cycles
+// (determines playback-rate)
+uint16_t krate_divisor;
+// Divisor and counter for interframe interpolation
+int8_t interp_counter;
+uint8_t interp_divisor;
+
+// Indices for Bank and Word (calculated from param/inlets)
+uint8_t bank_index;
+uint8_t word_index;
+
+// Calculated ROM offset for circuit-bent playback mode
+uint16_t bend_index;
+
+// Holds information about current word/phrase
+// See structure definition above
+WordData word;
+
+// Playback rate
+uint32_t rate;
+uint32_t old_rate;
+
+// Boolean vars hold values of control inlet/params
+bool loop;
+bool freeze;
+bool glitch;
+bool step;
+
+// Pitch table bits option
+uint8_t pitch_bits;
+uint8_t coeff_tables_id;
+
+// Trigger vars
+bool gate;
+bool end_word;
+
+// Struct to store LPC table indices for output
+LpcIndices lpc_indices = {0};
+// Zeroed LPC indices struct (used when synth needs to be silenced, at end of word etc.)
+LpcIndices lpc_silence = {0};
+
+///////////////////
+///////////////////
+//// FUNCTIONS ////
+///////////////////
+///////////////////
+
+////////////////////////////////////////////////////////
+// Little to Big-Endian conversion for 16-bit address //
+////////////////////////////////////////////////////////
+
+uint16_t RomReadLE(uint8_t lsb, uint8_t msb) {
+    return lsb | (msb << 8);
+}
+
+///////////////////////
+// Get Word Spelling //
+///////////////////////
+
+// http://stackoverflow.com/questions/1496313/returning-c-string-from-a-function
+
+uint8_t GetSpelling(uint16_t start_byte, unsigned char* spelling, int buffer_size, bool ignore_termination) {
+	bool		done_flag = false;
+	uint8_t	local_offset = 0;
+	uint8_t	temp_byte;
+	// Get word spelling
+	for(uint8_t i = 0; i < buffer_size; i++) {
+		// If end of word not reached, read char
+		if(!done_flag) {
+			// Grab one byte
+			temp_byte = attr_table.vsm_rom_data[start_byte + local_offset];
+			// Lookup char in chars table
+			spelling[i] = kTiToAscii[temp_byte];
+			// Detect end-of-word flag in 6th bit of char byte
+			if ((temp_byte & 0x40) && !ignore_termination)
+			//if (temp_byte & 0x40)
+				done_flag = true;
+			local_offset++;
+		} else {
+			// Fill remainder of string with space chars
+			spelling[i] = ' ';
+		}
+		// Terminate string
+		spelling[buffer_size -1] = '\0';
+	}
+	// Dump spelling string to console
+	LogTextMessage("selected word: %s", spelling);
+	// Return 
+	return local_offset;
+}
+
+////////////////////////////////////////////
+// Populate data struct for selected word //
+////////////////////////////////////////////
+
+// Adapted from https://dl.dropboxusercontent.com/u/79094972/s%2Bs_vsmparse.c
+// by Lord Nightmare for MAME project
+
+struct WordData GetWordData(uint16_t bank_offset, uint8_t word_index) {		
+	// Calculate offset to word data for current word
+	uint16_t	word_data_offset = bank_offset + (2 * word_index);
+	uint16_t	word_offset = RomReadLE(attr_table.vsm_rom_data[word_data_offset], attr_table.vsm_rom_data[word_data_offset + 1]);	
+	uint8_t	local_offset = 0;
+	bool		done_flag = false;	
+	// Struct to hold word data
+	struct WordData word_data;	
+	// Get spelling and index of next byte after end of spelling string
+	local_offset = GetSpelling(word_offset, word_data.spelling, 9, false);	
+	// Now, grab the pointers after the spelling and add to array
+	uint16_t temp_offset;
+	for(uint8_t i = 0; i < NUM_WORD_FRAGMENTS; i++) {
+		if(!done_flag) {
+			temp_offset = RomReadLE(attr_table.vsm_rom_data[word_offset + local_offset], attr_table.vsm_rom_data[word_offset + local_offset + 1]);
+			word_data.lpc[i] = temp_offset;
+			if (temp_offset == 0x0001) {
+				done_flag = true;
+			} else {
+				// Dump LPC address to console 
+				// LogTextMessage("word LPC data address(es): %u", temp_offset);
+				// Increment offset to grab next 2 bytes
+				local_offset += 2;
+			}
+		} else {
+			// Fill remainder of LPC address array with 1s
+			word_data.lpc[i] = 0x0001;
+		}
+	}
+	return word_data;
+}
+
+/////////////////////////////////////////////
+// Populate data structure for 'bent' word //
+/////////////////////////////////////////////
+
+struct WordData GetBentWordData(uint16_t start) {	
+	// Struct to hold word data
+	struct WordData word_data;
+	// Get spelling
+	GetSpelling(start, word_data.spelling, NUM_WORD_FRAGMENTS, true);
+	
+	// Set word start at first word fragment array index
+	word_data.lpc[0] = start;
+	// Fill rest of word fragments array with 1s
+	for(uint8_t i = 1; i < NUM_WORD_FRAGMENTS; i++) {
+		word_data.lpc[i] = 0x0001;
+	}
+	return word_data;
+}
+
+//////////////////////////
+//////////////////////////
+//// Talkie Functions ////
+//////////////////////////
+//////////////////////////
+
+// Functions prefixed with 'Tk' taken or adapted from
+// Talkie library for Arduino
+// by Peter Night (Going Digital)
+// https://github.com/going-digital/Talkie
+
+/////////////////////////
+// Silence Synthesiser //
+/////////////////////////
+
+void LpcSilence() {
+	end_word = true;
+	lpc_indices = lpc_silence;
+}
+
+///////////////////
+// Reset Address //
+///////////////////
+
+void ResetToWordStart() {
+	lpc_indices = lpc_silence;
+	play_head = word_start;
+}
+
+/////////////////////////////////////
+// Glitch Pointer On Glitch Enable //
+/////////////////////////////////////
+
+void GlitchPtr() {
+	// Randomise bit index within byte
+	play_head.bit = GenerateRandomNumber() % 7;
+}
+
+////////////////////////
+// Read LPC Data Bits //
+////////////////////////
+
+uint8_t TkGetBits(uint8_t bits) {
+	uint8_t value;
+	uint16_t data;
+	data = TkReverseBits(*(play_head.byte)) << 8;
+	if (play_head.bit + bits > 8) {
+		data |= TkReverseBits(*(play_head.byte + 1));
+	}
+	data <<= play_head.bit;
+	value = data >> (16-bits);
+	play_head.bit += bits;
+	if (play_head.bit >= 8) {
+		play_head.bit -= 8;
+		play_head.byte++;
+	}
+	return value;
+}
+
+//////////////////////
+// Reverse LPC Bits //
+//////////////////////
+
+uint8_t TkReverseBits(uint8_t a) {
+	uint32_t r = a;
+	__ASM volatile ("rbit %0, %1" : "=r" (r) : "r" (a));
+	return r >> 24;
+}
+
+/////////////////////
+// Read LPC Frames //
+/////////////////////
+
+void TkReadWord() {
+	uint8_t repeat;
+	uint8_t energy;
+	// Speak if end of word not reached
+	if (energy != 0xf) {
+		energy = TkGetBits(4);
+		if (energy == 0) {
+			// Energy = 0: rest frame
+			lpc_indices.energyindex = 0;
+		} else if (energy == 0xf) {
+			// Energy = 15: stop frame
+			// If next LPC fragment != 1, then play next fragment
+			if((word.lpc[play_head.fragment + 1] == 0x0001) || (play_head.fragment == 9)) {			
+				// Else we're at the end of the last word fragment, so 
+				// silence the synthesiser or reset to start if loop true
+				if(loop) {
+					ResetToWordStart();
+				} else {
+					LpcSilence();
+				}
+			} else {
+				// Set play_head to start of next word fragment and continue reading
+				play_head.fragment++;
+				play_head.byte = &attr_table.vsm_rom_data[word.lpc[play_head.fragment]];
+				play_head.bit = 0;
+			}
+		} else {
+			lpc_indices.energyindex = energy;
+			repeat = TkGetBits(1);
+			lpc_indices.pitchindex = TkGetBits(pitch_bits);
+			// A repeat frame uses the last coefficients
+			if (!repeat) {
+				// All frames use the first 4 coefficients
+				lpc_indices.k1index = TkGetBits(5);
+				lpc_indices.k2index = TkGetBits(5);
+				lpc_indices.k3index = TkGetBits(4);
+				lpc_indices.k4index = TkGetBits(4);
+				if (lpc_indices.pitchindex) {
+					// Voiced frames use 6 extra coefficients.
+					lpc_indices.k5index  = TkGetBits(4);
+					lpc_indices.k6index  = TkGetBits(4);
+					lpc_indices.k7index  = TkGetBits(4);
+					lpc_indices.k8index  = TkGetBits(3);
+					lpc_indices.k9index  = TkGetBits(3);
+					lpc_indices.k10index = TkGetBits(3);
+				} else {
+					// Zero above coefficients for unvoiced frames
+					lpc_indices.k5index  = 0;
+					lpc_indices.k6index  = 0;
+					lpc_indices.k7index  = 0;
+					lpc_indices.k8index  = 0;
+					lpc_indices.k9index  = 0;
+					lpc_indices.k10index = 0;
+				}
+			}
+		}
+	}
+}
+
+///////////////////////////
+///////////////////////////
+//// Utility Functions ////
+///////////////////////////
+///////////////////////////
+
+////////////////////////////////////
+// Calculate bend-mode ROM offset //
+////////////////////////////////////
+
+uint16_t CalculateBendIndex(uint32_t bank, uint32_t word) {
+	uint32_t result;
+	/*uint32_t ms = (bank << 5) & 0xFFFF0000;
+	result = (word >> 11) | bank;
+	result = result >> 13;
+	result -= 100;*/
+	result = (127 * (bank >> 20)) + (word >> 20);
+	return result;
+}
+
+//////////////////////////////////////
+// Scale input to 0 > out_max range //
+//////////////////////////////////////
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t ScaleU32(int32_t val, int32_t out_max) {
+	return (int32_t)(float)val * (float)out_max / 0x07FFFFFF;
+};
+
+////////////////////////////////////////////
+// Scale input to range out_min > out_max //
+////////////////////////////////////////////
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(int32_t val, int32_t out_min, int32_t out_max) {
+	float x = (float)val;
+	float outMin = (float)out_min;
+	float outMax = (float)out_max;
+	return (int32_t)(x * (outMax - outMin) / 0x07FFFFFF + outMin);
+};
+
+///////////////////////////////
+// Exponential interpolation //
+///////////////////////////////
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t CurveLog32(int32_t val) {
+	// Transform inlet val to float in 0 - 1 range
+	float inf = val * (float)(1.0f / (1 << 27));
+	float curve = 1 - (1 - inf) * (1 - inf);
+	return (int32_t)(curve * (float)(1 << 27));
+}
+
+/////////
+// Max //
+/////////
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Max(int32_t val, int32_t Max) {
+	return(val <= Max) ? val : Max;
+}
+
+/////////
+// Min //
+/////////
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Min(int32_t val, int32_t Min) {
+	return(val >= Min) ? val : Min;
+}]]></code.declaration>
+      <code.init><![CDATA[//
+      
+LogTextMessage("Initialising toneburst Talkie Synth ROM Reader");
+
+///////////////
+// Init vars //
+///////////////
+
+// Init K-Rate Counter(s)
+krate_counter = 1;
+krate_divisor = 75;	// 75 k-rate cycles = 25ms
+interp_counter = 0;
+interp_divisor = krate_divisor >> 4;
+
+// Default playback rate
+rate = krate_divisor;
+old_rate = rate;
+
+// Init param/inlet values
+bank_index = 0;
+word_index = 0;
+bend_index = 0;
+
+// Init word info struct
+word = {0};
+
+// Position to reset to on rising edge reset inlet/param
+jump_position = {0};
+reset_jump = false;
+reset_mark = false;
+
+// Init trigger vars
+gate = false;
+
+// Control bools/trigger defaults
+loop = false;
+freeze = false;
+step = false;
+glitch = false;
+
+// Pitch table bits option
+pitch_bits = 5; // Default to TMS51xx
+
+// Init all values in struct to 0
+lpc_indices = {0};
+
+// Init pointer to start of data array
+rom_start_ptr = &attr_table.vsm_rom_data[0];
+
+// Word address
+play_head = {0};
+
+// End of word/phrase flag
+end_word = false;
+
+///////////////////////////////////////
+// Extract index data from ROM array //
+///////////////////////////////////////
+
+uint8_t i;
+
+// Word counts banks A > D
+for(i = 0; i < 4; i++) {
+	bank_count[i] = attr_table.vsm_rom_data[i];
+	LogTextMessage("bank %u word-count: %u", i, bank_count[i]);	
+}
+
+// Pointers to word lists A > D
+for(i = 0; i < 4; i++) {
+	uint8_t indx = 2 * i + 4;
+	word_list_ptr[i] = RomReadLE(attr_table.vsm_rom_data[indx], attr_table.vsm_rom_data[indx + 1]);
+	LogTextMessage("bank %u offset: %u", i, word_list_ptr[i]);
+}
+
+///////////////////////////////////////////
+// Get pitch bits, Coefficient tables ID //
+///////////////////////////////////////////
+
+pitch_bits = attr_table.num_pitch_bits;
+coeff_tables_id = attr_table.coeff_tables_id;]]></code.init>
+      <code.krate><![CDATA[///////////////////
+// Params/Inlets //
+///////////////////
+
+// Continuous parameters
+// Original rate = 75 k-rate cycles (25ms)
+rate = __USAT(param_rate + inlet_rate, 27);
+
+// Detect change in rate
+if(rate != old_rate) {
+	// Calculate new k-rate counter divisor
+	krate_divisor = MapU32(CurveLog32(rate), 480, 15);
+	// Calculate new inter-frame interpolation counter divisor
+	interp_divisor = Min(krate_divisor >> 3, 1);
+	old_rate = rate;
+}
+
+
+loop = inlet_loop || param_loop;
+freeze = inlet_freeze || param_freeze || !rate;
+
+////////////////////////////////
+// Detect trigger rising edge //
+////////////////////////////////
+
+if(inlet_gate) {
+	if(!gate) {
+		// Calculate ROM offset for circuit-bent mode if set
+		if(inlet_mode || param_mode) {
+			bend_index = CalculateBendIndex(__USAT(param_bank + inlet_bank, 27), __USAT(param_word + inlet_word, 27));
+			word = GetBentWordData(bend_index);
+		// Else get word data and set playhead to start of word
+		} else {
+			// Word-select
+			bank_index = __USAT(param_bank + inlet_bank, 27) >> 25;	// 0 > 3
+			word_index = ScaleU32(__USAT(param_word + inlet_word, 27), bank_count[bank_index] - 1);	// Scaled to bank count
+			// Get current word data
+			word = GetWordData(word_list_ptr[bank_index], word_index);
+		}
+		// Set pointer
+		play_head.fragment = 0;
+		play_head.byte = &attr_table.vsm_rom_data[word.lpc[0]];
+		play_head.bit = 0;
+		// Set word-start reset pointer
+		word_start = play_head;
+		// Set reset-mark to start of word
+		jump_position = play_head;
+		// Default glitch-reset position also start of word
+		glitch_position = play_head;
+		// Reset counter so word plays immediately
+		krate_counter = 0;
+		// Reset end-of-word flag
+		end_word = false;
+	}
+	gate = true;
+	outlet_gate = (!end_word) ? true : false;
+} else {
+	gate = false;
+	outlet_gate = false;
+}
+
+/////////////////////////////////////
+// Detect Step Trig on rising edge //
+/////////////////////////////////////
+
+if(inlet_step || param_step) {
+	if(!step && freeze) {
+		TkReadWord();
+		// Reset cycle counter
+		krate_counter = 0;
+	}
+	step = true;
+} else {
+	step = false;
+}
+
+/////////////////////////////////////
+// Detect rising edge 'reset_mark' //
+/////////////////////////////////////
+
+if(inlet_rmark || param_rmark) {
+	if(!reset_mark) {
+		jump_position = play_head;
+		//LogTextMessage("reset_mark set");
+	}
+	reset_mark = true;
+} else {
+	reset_mark = false;
+}
+
+/////////////////////////////////////
+// Detect rising edge 'reset_jump' //
+/////////////////////////////////////
+
+if(inlet_rjump|| param_rjump) {
+	if(!reset_jump) {
+		play_head = jump_position;
+		end_word = false;
+		krate_counter = 0;
+		//LogTextMessage("reset_jump set");
+	}
+	reset_jump = true;
+} else {
+	reset_jump = false;
+}
+
+/////////////////////////
+// Detect Glitch Press //
+/////////////////////////
+
+if(param_glitch || inlet_glitch) {
+	if(!glitch) {
+		glitch_position = play_head;
+		play_head.bit = GenerateRandomNumber() % 7;
+		krate_counter = 0;
+	}
+	glitch = true;
+} else {
+	if(glitch) {
+		play_head = glitch_position;
+	}
+	glitch = false;
+}
+
+
+//////////////////////////
+// Read word LPC stream //
+//////////////////////////
+
+if(krate_counter == 1) {
+	// Read word every krate_counter k-rate cycles
+	if(!end_word && !freeze) {
+		TkReadWord();
+		// Zero interpolation counter
+		interp_counter = 0;
+	}
+}
+
+//////////////////////////
+// Increment counter(s) //
+//////////////////////////
+
+krate_counter = (krate_counter >= krate_divisor) ? 1 : krate_counter + 1;
+
+/////////////////////////////
+// Set synth outlet values //
+/////////////////////////////
+
+outlet_ENERGYi = lpc_indices.energyindex;
+outlet_PITCHi  = lpc_indices.pitchindex;
+outlet_K1i     = lpc_indices.k1index;
+outlet_K2i     = lpc_indices.k2index;
+outlet_K3i     = lpc_indices.k3index;
+outlet_K4i     = lpc_indices.k4index;
+outlet_K5i     = lpc_indices.k5index;
+outlet_K6i     = lpc_indices.k6index;
+outlet_K7i     = lpc_indices.k7index;
+outlet_K8i     = lpc_indices.k8index;
+outlet_K9i     = lpc_indices.k9index;
+outlet_K10i    = lpc_indices.k10index;
+
+///////////////////////////////////
+// Interpolation position outlet //
+///////////////////////////////////
+
+outlet_ipos = interp_counter;
+
+////////////////////////
+// Table index outlet //
+////////////////////////
+
+outlet_tindex = coeff_tables_id;
+
+// Increment interpolation counter after setting outlet
+if(krate_counter % interp_divisor == 0) {
+	interp_counter = (interp_counter < 7) ? interp_counter + 1 : 7;
+};
+
+//]]></code.krate>
+   </obj.normal>
+</objdefs>

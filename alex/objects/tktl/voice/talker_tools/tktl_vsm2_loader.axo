@@ -1,9 +1,9 @@
 <objdefs appVersion="1.0.12">
-   <obj.normal id="tktl_vsm2_loader" uuid="37f03a79-ba9e-44af-957e-28f486587b54">
+   <obj.normal id="tktl loader vsm2" uuid="37f03a79-ba9e-44af-957e-28f486587b54">
       <sDescription>Loads Word ROM data from VSM2 format files.
-Must be used in combination with the Talker Tools VSM2 ROM Reader object.
+Must be used in combination with the tktl reader vsm2 object.
 Part of the Talkie Tools object set.</sDescription>
-      <author>Talker Tools</author>
+      <author>Team Talker</author>
       <license>BSD</license>
       <helpPatch>talker_tools.h</helpPatch>
       <inlets/>
@@ -30,7 +30,7 @@ Part of the Talkie Tools object set.</sDescription>
 
 /*
  * Load VSM2-format binary files
- * 
+ *
  * Struct/Class/function definitions in
  * ./inc/file_io.h
  */
@@ -51,7 +51,7 @@ LogTextMessage("///////////////////////////////////////////////\n");
 
 if(attr_debug)
 	LogTextMessage("Extended information display on\n");
-	
+
 multiple_instance = false;
 
 //////////////////////////////////////
