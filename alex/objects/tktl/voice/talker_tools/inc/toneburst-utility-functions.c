@@ -92,18 +92,18 @@ __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t CurveLog32(int32_t v
 //	return result >> 16;
 //};
 //
-//// 32-bit slew function, with pointer to state variable
-//// (Adapted from Factory glide object)
-//__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Slew32(int32_t target, int32_t *state, int32_t slewTime, bool enable) {
-//	if (enable && slewTime > 0) {
-//		*state = ___SMMLA(*state - target, (-1 << 26) + (slewTime >> 1), *state);
-//		return *state;
-//	} else {
-//		// Update slew state so we don't get a jump next time slew is enabled
-//		*state = target;
-//		return target;
-//	};
-//};
+// 32-bit slew function, with pointer to state variable
+// (Adapted from Factory glide object)
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Slew32(int32_t target, int32_t *state, int32_t slewTime, bool enable) {
+	if (enable && slewTime > 0) {
+		*state = ___SMMLA(*state - target, (-1 << 26) + (slewTime >> 1), *state);
+		return *state;
+	} else {
+		// Update slew state so we don't get a jump next time slew is enabled
+		*state = target;
+		return target;
+	};
+};
 //
 //// 32-bit square root
 //// (Adapted from Factory sqrt object)

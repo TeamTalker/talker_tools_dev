@@ -82,6 +82,9 @@ void TktlLpcStreamPosition::SetToSavedPosition() {
 // Get frame from LPC data stream //
 ////////////////////////////////////
 
+//////////////////
+// Public --->
+
 // Constructor
 TktlGetLPCFrame::TktlGetLPCFrame() {
     read_word_      = true;
@@ -89,9 +92,10 @@ TktlGetLPCFrame::TktlGetLPCFrame() {
     frame_loop_     = false;
     frame_glitch_   = false;
     frame_repeat_ 	= 0;
-    frame_energy_ 	= 1;
+    frame_energy_ 	= 1;	// Needs to be more than 0, or frames will not play
 	word_end_       = false;
 	pitch_bits_		= 6;	// Default VSM2
+<<<<<<< HEAD
 };
 
 // Set pitch bit count
@@ -108,6 +112,14 @@ TktlLpcIndices TktlGetLPCFrame::GetFrame() {
     if(pitch_bits_ == 5)
     	lpc_indices_.indices_[1] <<= 1;
     return lpc_indices_;
+=======
+	lpc_indices_.Silence();
+};
+
+// Set pitch bit count
+void TktlGetLPCFrame::SetPitchBits(uint8_t bits) {
+	pitch_bits_ = bits;
+>>>>>>> master
 };
 
 // Set word-start pointer
@@ -130,7 +142,11 @@ void TktlGetLPCFrame::SetGlitch(bool glitch) {
 // Stop reading frame data
 void TktlGetLPCFrame::StopRead() {
     read_word_ = false;
+<<<<<<< HEAD
     end_word_  = true;
+=======
+    word_end_  = true;
+>>>>>>> master
     lpc_indices_.Silence();
 };
 
@@ -149,10 +165,39 @@ void TktlGetLPCFrame::SetToJumpPoint() {
 	head_.SetToSavedPosition();
 };
 
+// Tick object
+// TODO
+/*void TktlGetLPCFrame::Tick() {
+
+};*/
+
+// Get frame
+TktlLpcIndices TktlGetLPCFrame::GetFrame() {
+    // Reset word-end
+    word_end_ = false;
+    ReadFrame();
+    // Bit-shift pitch indices up by one, if there are only 5 bits for pitch
+    if(pitch_bits_ == 5)
+    	lpc_indices_.indices_[1] <<= 1;
+    return lpc_indices_;
+};
+
+//////////////////
+// Private --->
+
+// Increment counters
+void TktlGetLPCFrame::IncrementCounters() {
+
+};
+
 // Read word
 void TktlGetLPCFrame::ReadFrame() {
     // Speak if end of word not reached
+<<<<<<< HEAD
     if(frame_energy_ != 0xf) && (read_word_) {
+=======
+    if((frame_energy_ != 0xf) && (read_word_)) {
+>>>>>>> master
         frame_energy_ = GetBits(4);
         if (frame_energy_ == 0) {
             // Energy = 0: rest frame
@@ -230,6 +275,7 @@ uint8_t TktlGetLPCFrame::ReverseBits(uint8_t byte) {
      	return r >> 24;
      }
 };
+
 
 
 

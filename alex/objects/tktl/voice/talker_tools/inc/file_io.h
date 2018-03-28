@@ -79,6 +79,33 @@ void TktlDisplayWordMeta(uint8_t debug, uint16_t word_index, struct TktlVSM2Word
 // Min function for work-count
 uint16_t TktlMin16U(uint16_t val, uint16_t max);
 
+/////////////////
+/////////////////
+//// Classes ////
+/////////////////
+/////////////////
+
+//////////////////////////////
+// SDRAM data-pointer class //
+//////////////////////////////
+
+// Never instantiated, merely used to wrap static members for global access
+class TktlShared {
+	public:  
+		//static bool inited_;
+		static uint8_t *ptr_vsm_sdram_;
+		static uint8_t *ptr_vsm2_sdram_;
+		static struct TktlVSM2ROMHeader *ptr_vsm2_rom_header_;
+		static struct TktlVSM2WordMeta *ptr_vsm2_word_meta_sdram_;
+		static uint16_t	vsm2_word_count_;
+		static uint8_t *ptr_lpc_coef_tables_sdram_;
+		static uint8_t *ptr_lpc_chirp_tables_sdram_;
+		static uint8_t vsm2_lpc_tables_id_;
+		static uint8_t rom_pitch_bits_;
+		static uint32_t	vsm2_rom_size_;
+		static uint8_t vsm2_preset_index_;
+};
+
 /////////////////////////////////////
 /////////////////////////////////////
 //// Include Implementation File ////

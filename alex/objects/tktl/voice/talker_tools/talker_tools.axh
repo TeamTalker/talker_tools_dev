@@ -12,7 +12,7 @@
    </obj>
    <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1162" y="126">
       <params>
-         <frac32.u.map name="value" value="64.0"/>
+         <frac32.u.map name="value" value="38.5"/>
       </params>
       <attribs/>
    </obj>
@@ -23,7 +23,11 @@
          <combo attributeName="debug" selection="off"/>
       </attribs>
    </obj>
-   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="bool_1" x="378" y="154">
+   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="gate" x="378" y="154">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="word-end" x="462" y="154">
       <params/>
       <attribs/>
    </obj>
@@ -40,11 +44,11 @@
    </obj>
    <obj type="tktl/voice/talker_tools/tktl_vsm2_reader" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb" name="tktl_vsm2_reader_1" x="168" y="224">
       <params>
-         <int32.hradio name="mode" value="0"/>
-         <int32 name="word" value="5"/>
-         <frac32.u.map name="rate" value="0.0"/>
-         <bool32.tgl name="loop" value="0"/>
-         <bool32.tgl name="freeze" value="1"/>
+         <int32 name="word" value="2"/>
+         <frac32.u.map name="rate" value="32.5"/>
+         <frac32.u.map name="bend" value="0.0"/>
+         <bool32.tgl name="loop" value="1"/>
+         <bool32.tgl name="freeze" value="0"/>
          <bool32.mom name="step" value="0"/>
          <bool32.mom name="setjump" value="0"/>
          <bool32.mom name="jump" value="0"/>
@@ -54,12 +58,14 @@
          <combo attributeName="debug" selection="off"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/Talkie Tools Tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="Talkie_1" x="378" y="224">
+   <obj type="tktl/voice/talker_tools/Talker Tools Tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="Talker_1" x="378" y="224">
       <params>
-         <bool32.tgl name="interpolation" value="0"/>
          <int32 name="tables" value="0"/>
+         <bool32.tgl name="interpolation" value="1"/>
       </params>
-      <attribs/>
+      <attribs>
+         <combo attributeName="debug" selection="off"/>
+      </attribs>
    </obj>
    <patchobj type="patch/object" uuid="6556facb-1322-4429-ba75-7887b2fe92a3" name="demult" x="602" y="224">
       <params/>
@@ -114,7 +120,7 @@ for(int i = 0; i < 16; i++) {
          <frac32.u.map name="wave" value="0.0"/>
          <int32.hradio name="oct" value="1"/>
          <bool32.tgl name="repitch" value="0"/>
-         <int32 name="pmode" value="2"/>
+         <int32 name="pmode" value="1"/>
          <bool32.tgl name="glide" value="0"/>
          <frac32.u.map name="glideamt" value="28.5"/>
       </params>
@@ -925,10 +931,6 @@ disp_k10 = inlet_TALKER[9] << 20;
 //]]></code.krate>
       </object>
    </patchobj>
-   <obj type="disp/hex" uuid="3ce415f2f0e09f5b3cf10e5d355274847fd063b2" name="hex_1" x="294" y="588">
-      <params/>
-      <attribs/>
-   </obj>
    <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_9" x="476" y="588">
       <params>
          <int32 name="index" value="4"/>
@@ -1039,24 +1041,6 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
          <dest obj="LPC Filter" inlet="k10"/>
       </net>
       <net>
-         <source obj="Talkie_1" outlet="TALKER"/>
-         <dest obj="demult" inlet="TALKER"/>
-      </net>
-      <net>
-         <source obj="tktl_vsm2_reader_1" outlet="gate"/>
-         <dest obj="bool_1" inlet="in"/>
-         <dest obj="Talkie_1" inlet="gate"/>
-      </net>
-      <net>
-         <source obj="tktl_vsm2_reader_1" outlet="TALKER"/>
-         <dest obj="hex_10" inlet="TALKER"/>
-         <dest obj="Talkie_1" inlet="TALKER"/>
-      </net>
-      <net>
-         <source obj="keyb_1" outlet="gate"/>
-         <dest obj="tktl_vsm2_reader_1" inlet="gate"/>
-      </net>
-      <net>
          <source obj="LP Filter" outlet="out"/>
          <dest obj="vca_1" inlet="a"/>
       </net>
@@ -1066,16 +1050,33 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
          <dest obj="Output" inlet="left"/>
       </net>
       <net>
-         <source obj="Talkie_1" outlet="gate"/>
-         <dest obj="ahd_1" inlet="trig"/>
-      </net>
-      <net>
-         <source obj="tktl_vsm2_reader_1" outlet="debug"/>
-         <dest obj="hex_1" inlet="in"/>
-      </net>
-      <net>
          <source obj="keyb_1" outlet="note"/>
          <dest obj="Talkie Voiced Source" inlet="note"/>
+      </net>
+      <net>
+         <source obj="keyb_1" outlet="gate"/>
+         <dest obj="tktl_vsm2_reader_1" inlet="gate"/>
+      </net>
+      <net>
+         <source obj="tktl_vsm2_reader_1" outlet="gate"/>
+         <dest obj="gate" inlet="in"/>
+         <dest obj="Talker_1" inlet="gate"/>
+      </net>
+      <net>
+         <source obj="tktl_vsm2_reader_1" outlet="wordend"/>
+         <dest obj="word-end" inlet="in"/>
+      </net>
+      <net>
+         <source obj="tktl_vsm2_reader_1" outlet="tALKER"/>
+         <dest obj="Talker_1" inlet="tALKER"/>
+      </net>
+      <net>
+         <source obj="Talker_1" outlet="tALKER"/>
+         <dest obj="demult" inlet="TALKER"/>
+      </net>
+      <net>
+         <source obj="Talker_1" outlet="gate"/>
+         <dest obj="ahd_1" inlet="trig"/>
       </net>
    </nets>
    <settings>
@@ -1083,8 +1084,8 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
    </settings>
    <notes><![CDATA[]]></notes>
    <windowPos>
-      <x>196</x>
-      <y>64</y>
+      <x>923</x>
+      <y>22</y>
       <width>1617</width>
       <height>906</height>
    </windowPos>

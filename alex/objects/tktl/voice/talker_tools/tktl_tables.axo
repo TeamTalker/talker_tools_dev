@@ -1,8 +1,12 @@
 <objdefs appVersion="1.0.12">
+<<<<<<< HEAD
    <obj.normal id="Talker Tools Tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f">
+=======
+   <obj.normal id="tktl tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f">
+>>>>>>> master
       <sDescription>Loads original Texas Instruments LPC coefficient tables.
 Part of the Talker Tools object set.</sDescription>
-      <author>toneburst</author>
+      <author>Team Talker</author>
       <license>BSD</license>
       <inlets>
          <frac32buffer.positive name="tALKER" description="multiplexed lpc index values NOT AUDIO!!"/>
@@ -10,11 +14,19 @@ Part of the Talker Tools object set.</sDescription>
       </inlets>
       <outlets>
          <frac32buffer.bipolar name="tALKER"/>
+<<<<<<< HEAD
          <bool32 name="gate" description="gate passthrough"/>
       </outlets>
       <displays/>
       <params>
          <int32 name="tables" description="LPC table-select (0 = auto-select)" noLabel="true">
+=======
+         <bool32 name="gate" description="gate pass-through"/>
+      </outlets>
+      <displays/>
+      <params>
+         <int32 name="tables" description="LPC table-select (0 = auto-select)">
+>>>>>>> master
             <MinValue i="0"/>
             <MaxValue i="8"/>
          </int32>
@@ -43,14 +55,22 @@ Part of the Talker Tools object set.</sDescription>
 /*
  * Based on code from
  * https://raw.githubusercontent.com/mamedev/mame/master/src/devices/sound/tms5110.cpp
+<<<<<<< HEAD
  * 
+=======
+ *
+>>>>>>> master
  * With huge thanks to:
  * Frank Palazzolo
  * Neill Corlett
  * Aaron Giles
  * Lord Nightmare
  * Couriersud
+<<<<<<< HEAD
  * 
+=======
+ *
+>>>>>>> master
  * Your work is amazing!
  */
 
@@ -145,7 +165,7 @@ tables = 7;
 if(TktlShared::vsm2_word_count_ == 0) {
 	LogTextMessage("ERROR: VSM2 ROM file not loaded, exiting");
 	disable = true;
-	return;	
+	return;
 };
 
 //////////////////////////////////////
@@ -155,7 +175,7 @@ if(TktlShared::vsm2_word_count_ == 0) {
 // Check if file already copied to SDRAM
 // (pointer set in TktlShared class)
 if(!TktlShared::ptr_lpc_coef_tables_sdram_) {
-	
+
 	// Run file-loader (in incl. file) and save return-status
 	// Pointer to SDRAM data passed by reference
 	load_status = TktlLoadFileSDRAM("/shared/tktl/talker_tools/lpc_tables.raw", TktlShared::ptr_lpc_coef_tables_sdram_, attr_debug);
@@ -164,7 +184,7 @@ if(!TktlShared::ptr_lpc_coef_tables_sdram_) {
 	if(load_status != 0) {
 		LogTextMessage("ERROR: File-loader failed to load file to SDRAM, exiting");
 		return;
-	};	
+	};
 } else {
 	LogTextMessage("Reusing data loaded by the first instance of this object.");
 	multiple_instance = true;
@@ -217,7 +237,11 @@ if(tables != param_tables) {
 	};
 	// Log table ID to console
 	DisplayTablesInfo(ptr_lpc_tables_sdram, attr_debug);
+<<<<<<< HEAD
 	tables = param_tables;	
+=======
+	tables = param_tables;
+>>>>>>> master
 };
 
 ///////////////////////
@@ -225,20 +249,34 @@ if(tables != param_tables) {
 ///////////////////////
 
 // Interpolation turn ON
+<<<<<<< HEAD
 if(param_interpolation == 1) {
 	
+=======
+if(param_interpolation) {
+
+>>>>>>> master
 	interp_position = inlet_tALKER[12];
 
 	// Only interpolate if interpolation position changes
 	if(interp_position != interp_position_old) {
+<<<<<<< HEAD
 		
+=======
+
+>>>>>>> master
 		switch(interp_position) {
 
 			/////////////////////
 			// First sub-frame //
 			/////////////////////
+<<<<<<< HEAD
 			
 			case 0 :		
+=======
+
+			case 0 :
+>>>>>>> master
 				// Set voiced/unvoiced flag for incoming frame
 				// Flag set if incoming pitch index = 0
 				unvoiced_flag_new = (inlet_tALKER[1] == 0) ? true : false;
@@ -255,6 +293,7 @@ if(param_interpolation == 1) {
 				////////////////////////////
 				// Capture new LPC values //
 				////////////////////////////
+<<<<<<< HEAD
 				
 				lpc_frame_new.energy	= ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0]];
 				lpc_frame_new.pitch  	= ptr_lpc_tables_sdram -> table_pitch[inlet_tALKER[1]];
@@ -269,6 +308,22 @@ if(param_interpolation == 1) {
 				lpc_frame_new.kvals[8]  	= ptr_lpc_tables_sdram -> table_k[8][inlet_tALKER[10]];
 				lpc_frame_new.kvals[9]  	= ptr_lpc_tables_sdram -> table_k[9][inlet_tALKER[11]];
 		
+=======
+
+				lpc_frame_new.energy   = ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0]];
+				lpc_frame_new.pitch    = ptr_lpc_tables_sdram -> table_pitch[inlet_tALKER[1]];
+				lpc_frame_new.kvals[0] = ptr_lpc_tables_sdram -> table_k[0][inlet_tALKER[2]];
+				lpc_frame_new.kvals[1] = ptr_lpc_tables_sdram -> table_k[1][inlet_tALKER[3]];
+				lpc_frame_new.kvals[2] = ptr_lpc_tables_sdram -> table_k[2][inlet_tALKER[4]];
+				lpc_frame_new.kvals[3] = ptr_lpc_tables_sdram -> table_k[3][inlet_tALKER[5]];
+				lpc_frame_new.kvals[4] = ptr_lpc_tables_sdram -> table_k[4][inlet_tALKER[6]];
+				lpc_frame_new.kvals[5] = ptr_lpc_tables_sdram -> table_k[5][inlet_tALKER[7]];
+				lpc_frame_new.kvals[6] = ptr_lpc_tables_sdram -> table_k[6][inlet_tALKER[8]];
+				lpc_frame_new.kvals[7] = ptr_lpc_tables_sdram -> table_k[7][inlet_tALKER[9]];
+				lpc_frame_new.kvals[8] = ptr_lpc_tables_sdram -> table_k[8][inlet_tALKER[10]];
+				lpc_frame_new.kvals[9] = ptr_lpc_tables_sdram -> table_k[9][inlet_tALKER[11]];
+
+>>>>>>> master
 				if(interp_inhibit) {
 					// Interpolation IS inhibited
 					// Set outputs to new frame
@@ -283,18 +338,30 @@ if(param_interpolation == 1) {
 			///////////////////////////////////////////
 			// (Potentially) interpolated sub-frames //
 			///////////////////////////////////////////
+<<<<<<< HEAD
 			
 			case 1: case 2: case 3: case 4: case 5: case 6:
 				
 				// Interpolation inhibited 
 				if(interp_inhibit) {									
 					lpc_frame_out = lpc_frame_new;								
+=======
+
+			case 1: case 2: case 3: case 4: case 5: case 6:
+
+				// Interpolation inhibited
+				if(interp_inhibit) {
+					lpc_frame_out = lpc_frame_new;
+>>>>>>> master
 				// Interpolate
 				} else {
 					// Extract current interpolation coefficient from table
 					interp_coeff = ptr_lpc_tables_sdram -> table_interp[interp_position];
 
+<<<<<<< HEAD
 					// lpc_frame_out_energy += ((lpc_frame_new_energy - lpc_frame_out_energy) >> interp_coeff);
+=======
+>>>>>>> master
 					lpc_frame_out.energy   += ((lpc_frame_new.energy   - lpc_frame_out.energy)   >> interp_coeff);
 					lpc_frame_out.pitch    += ((lpc_frame_new.pitch    - lpc_frame_out.pitch)    >> interp_coeff);
 					lpc_frame_out.kvals[0] += ((lpc_frame_new.kvals[0] - lpc_frame_out.kvals[0]) >> interp_coeff);
@@ -307,7 +374,11 @@ if(param_interpolation == 1) {
 					lpc_frame_out.kvals[7] += ((lpc_frame_new.kvals[7] - lpc_frame_out.kvals[7]) >> interp_coeff);
 					lpc_frame_out.kvals[8] += ((lpc_frame_new.kvals[8] - lpc_frame_out.kvals[8]) >> interp_coeff);
 					lpc_frame_out.kvals[9] += ((lpc_frame_new.kvals[9] - lpc_frame_out.kvals[9]) >> interp_coeff);
+<<<<<<< HEAD
 				};	
+=======
+				};
+>>>>>>> master
 
 			////////////////////
 			// Last sub-frame //
@@ -318,6 +389,7 @@ if(param_interpolation == 1) {
 				// Set voiced/unvoiced flag for next frame
 				unvoiced_flag_old = unvoiced_flag_new;
 				silent_flag_old = silent_flag_new;
+<<<<<<< HEAD
 			
 				// Copy current frame to old frame
 				lpc_frame_out = lpc_frame_new;
@@ -344,6 +416,34 @@ if(param_interpolation == 1) {
 	outlet_tALKER[9]	= lpc_frame_out.kvals[7];
 	outlet_tALKER[10]	= lpc_frame_out.kvals[8];
 	outlet_tALKER[11]	= lpc_frame_out.kvals[9];
+=======
+
+				// Copy current frame to old frame
+				lpc_frame_out = lpc_frame_new;
+				lpc_frame_old = lpc_frame_new;
+
+				break;
+
+		};	// End sub-frame logic
+	};	// End interp_position change
+
+	/////////////////////////////
+	// Set interpolated output //
+	/////////////////////////////
+
+	outlet_tALKER[0]  = lpc_frame_out.energy;
+	outlet_tALKER[1]  = lpc_frame_out.pitch;
+	outlet_tALKER[2]  = lpc_frame_out.kvals[0];
+	outlet_tALKER[3]  = lpc_frame_out.kvals[1];
+	outlet_tALKER[4]  = lpc_frame_out.kvals[2];
+	outlet_tALKER[5]  = lpc_frame_out.kvals[3];
+	outlet_tALKER[6]  = lpc_frame_out.kvals[4];
+	outlet_tALKER[7]  = lpc_frame_out.kvals[5];
+	outlet_tALKER[8]  = lpc_frame_out.kvals[6];
+	outlet_tALKER[9]  = lpc_frame_out.kvals[7];
+	outlet_tALKER[10] = lpc_frame_out.kvals[8];
+	outlet_tALKER[11] = lpc_frame_out.kvals[9];
+>>>>>>> master
 
 	// Update old interp_position
 	interp_position_old = interp_position;
@@ -355,9 +455,15 @@ if(param_interpolation == 1) {
 
 // Set outlet values directly from inlets
 } else {
+<<<<<<< HEAD
 	
 	outlet_tALKER[0]  =  ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0]];
 	outlet_tALKER[1]  =  ptr_lpc_tables_sdram -> table_pitch[inlet_tALKER[1]];	
+=======
+
+	outlet_tALKER[0]  =  ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0]];
+	outlet_tALKER[1]  =  ptr_lpc_tables_sdram -> table_pitch[inlet_tALKER[1]];
+>>>>>>> master
 	outlet_tALKER[2]  =  ptr_lpc_tables_sdram -> table_k[0][inlet_tALKER[2]];
 	outlet_tALKER[3]  =  ptr_lpc_tables_sdram -> table_k[1][inlet_tALKER[3]];
 	outlet_tALKER[4]  =  ptr_lpc_tables_sdram -> table_k[2][inlet_tALKER[5]];
