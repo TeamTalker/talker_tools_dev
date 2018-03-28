@@ -1,0 +1,131 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="lowhold" uuid="4e651850-fc62-433c-83de-59693b860769">
+      <sDescription>Hold selected indices when hold inlet or param is high and input is lower then previous sample. Part of the Talkie Tools object set.</sDescription>
+      <author>Team Talker</author>
+      <license>GPL</license>
+      <inlets>
+         <frac32buffer.positive name="tALKER"/>
+         <bool32.risingfalling name="hold"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.positive name="tALKER"/>
+      </outlets>
+      <displays/>
+      <params>
+         <frac32.u.map name="thresh"/>
+         <bool32.mom name="hold"/>
+         <bool32.tgl name="ENERGYi"/>
+         <bool32.tgl name="PITCHi"/>
+         <bool32.tgl name="K1i"/>
+         <bool32.tgl name="K2i"/>
+         <bool32.tgl name="K3i"/>
+         <bool32.tgl name="K4i"/>
+         <bool32.tgl name="K5i"/>
+         <bool32.tgl name="K6i"/>
+         <bool32.tgl name="K7i"/>
+         <bool32.tgl name="K8i"/>
+         <bool32.tgl name="K9i"/>
+         <bool32.tgl name="K10i"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[uint8_t hold_val[11];
+uint8_t thresh_22, thresh_23, thresh_24;
+bool hold = false;
+bool init = false;]]></code.declaration>
+      <code.krate><![CDATA[if (param_hold | inlet_hold) hold = true;
+else hold = false;
+thresh_22 = param_thresh>>22;
+thresh_23 = thresh_22>>1;
+thresh_24 = thresh_23>>1;
+if (!hold | !init) {
+	init = true;
+	for(int i = 0; i < 16; i++) {
+	if (i<12)	hold_val[i] = inlet_tALKER[i];
+		outlet_tALKER[i] = inlet_tALKER[i];	
+	};
+	
+} else {
+
+	if (param_ENERGYi && inlet_tALKER[0] > hold_val[0])outlet_tALKER[0] = hold_val[0];
+	
+	else {
+		outlet_tALKER[0] = inlet_tALKER[0];
+		if (hold_val[0] > thresh_23) hold_val[0] = inlet_tALKER[0];
+		else hold_val[0] = thresh_23;
+		}
+	if (param_PITCHi && inlet_tALKER[1] > hold_val[1]) outlet_tALKER[1] = hold_val[1];
+	
+	else {
+		outlet_tALKER[1] = inlet_tALKER[1];
+		if (hold_val[1] > (param_thresh>>21)) hold_val[1] = inlet_tALKER[1];
+		else hold_val[1] = param_thresh>>21;
+		}
+	if (param_K1i && inlet_tALKER[2] > hold_val[2]) outlet_tALKER[2] = hold_val[2];
+	
+	else {
+		outlet_tALKER[2] = inlet_tALKER[2];
+		if (hold_val[2] > thresh_22) hold_val[2] = inlet_tALKER[2];
+		else hold_val[2] = thresh_22;
+	}
+	if (param_K2i && inlet_tALKER[3] > hold_val[3]) outlet_tALKER[3] = hold_val[3];
+	else {
+		outlet_tALKER[3] = inlet_tALKER[3];
+		if (hold_val[3] > thresh_22) hold_val[3] = inlet_tALKER[3];
+		else hold_val[3] = thresh_22;
+	}
+	if (param_K3i && inlet_tALKER[4] > hold_val[4]) outlet_tALKER[4] = hold_val[4];
+	else {
+		outlet_tALKER[4] = inlet_tALKER[4];
+		if (hold_val[4] > thresh_23) hold_val[4] = inlet_tALKER[4];
+		else hold_val[4] = thresh_23;
+	}
+	if (param_K4i && inlet_tALKER[5] > hold_val[5]) outlet_tALKER[5] = hold_val[5];
+	else {
+		outlet_tALKER[5] = inlet_tALKER[5];
+		if (hold_val[5] > thresh_23) hold_val[5] = inlet_tALKER[5];
+		else hold_val[5] = thresh_23;
+	}
+	if (param_K5i && inlet_tALKER[6] > hold_val[6]) outlet_tALKER[6] = hold_val[6];
+	else {
+		outlet_tALKER[6] = inlet_tALKER[6];
+		if (hold_val[6] > thresh_23) hold_val[6] = inlet_tALKER[6];
+		else hold_val[6] = thresh_23;
+	}
+	if (param_K6i && inlet_tALKER[7] > hold_val[7]) outlet_tALKER[7] = hold_val[7];
+	else {
+		outlet_tALKER[7] = inlet_tALKER[7];
+		if (hold_val[7] > thresh_23) hold_val[7] = inlet_tALKER[7];
+		else hold_val[7] = thresh_23;
+	}
+	if (param_K7i && inlet_tALKER[8] > hold_val[8]) outlet_tALKER[8] = hold_val[8];
+	else {
+		outlet_tALKER[8] = inlet_tALKER[8];
+		if (hold_val[8] > thresh_23) hold_val[8] = inlet_tALKER[8];
+		else hold_val[8] = thresh_23;
+	}
+	if (param_K8i && inlet_tALKER[9] > hold_val[9]) outlet_tALKER[9] = hold_val[9];
+	else {
+		outlet_tALKER[9] = inlet_tALKER[9];
+		if (hold_val[9] > thresh_24) hold_val[9] = inlet_tALKER[9];
+		else hold_val[9] = thresh_24;
+	}
+	if (param_K9i && inlet_tALKER[10] > hold_val[10]) outlet_tALKER[10] = hold_val[10];
+	else {
+		outlet_tALKER[10] = inlet_tALKER[10];
+		if (hold_val[10] > thresh_24) hold_val[10] = inlet_tALKER[10];
+		else hold_val[10] = thresh_24;
+	}
+	if (param_K10i && inlet_tALKER[11] > hold_val[11]) outlet_tALKER[11] = hold_val[11];
+	else {
+		outlet_tALKER[11] = inlet_tALKER[11];
+		if (hold_val[11] > thresh_24) hold_val[11] = inlet_tALKER[11];
+		else hold_val[11] = thresh_24;
+	}
+	//pass thru unaffected
+	outlet_tALKER[12] = inlet_tALKER[12];
+	outlet_tALKER[13] = inlet_tALKER[13];
+	outlet_tALKER[14] = inlet_tALKER[14];
+	outlet_tALKER[15] = inlet_tALKER[15];
+}]]></code.krate>
+   </obj.normal>
+</objdefs>

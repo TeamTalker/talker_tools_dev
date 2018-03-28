@@ -1,0 +1,116 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="peakhold" uuid="f5315be5-0ddc-4005-a9ed-a028e6016f58">
+      <sDescription>Peakhold selected indices when hold inlet or param is high. Part of the Talkie Tools set of objects.</sDescription>
+      <author>Team Talker</author>
+      <license>GPL</license>
+      <inlets>
+         <frac32buffer.positive name="tALKER"/>
+         <bool32.risingfalling name="hold"/>
+         <bool32.risingfalling name="reset"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.positive name="tALKER"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.mom name="hold"/>
+         <bool32.mom name="reset"/>
+         <bool32.tgl name="ENERGYi"/>
+         <bool32.tgl name="PITCHi"/>
+         <bool32.tgl name="K1i"/>
+         <bool32.tgl name="K2i"/>
+         <bool32.tgl name="K3i"/>
+         <bool32.tgl name="K4i"/>
+         <bool32.tgl name="K5i"/>
+         <bool32.tgl name="K6i"/>
+         <bool32.tgl name="K7i"/>
+         <bool32.tgl name="K8i"/>
+         <bool32.tgl name="K9i"/>
+         <bool32.tgl name="K10i"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[uint8_t hold_val[16];
+bool hold = false;]]></code.declaration>
+      <code.krate><![CDATA[if (param_hold | inlet_hold) hold = true;
+else hold = false;
+if (!hold) {
+	for(int i = 0; i < 16; i++) {
+		hold_val[i] = inlet_tALKER[i];
+		outlet_tALKER[i] = inlet_tALKER[i];	
+	};
+	
+} else {
+
+	if (param_ENERGYi && inlet_tALKER[0] < hold_val[0]) outlet_tALKER[0] = hold_val[0];
+	else {
+		outlet_tALKER[0] = inlet_tALKER[0];
+		hold_val[0] = inlet_tALKER[0];
+		}
+	if (param_PITCHi && inlet_tALKER[1] < hold_val[1]) outlet_tALKER[1] = hold_val[1];
+	else {
+		outlet_tALKER[1] = inlet_tALKER[1];
+		hold_val[1] = inlet_tALKER[1];
+		}
+	if (param_K1i && inlet_tALKER[2] < hold_val[2]) outlet_tALKER[2] = hold_val[2];
+	else {
+		outlet_tALKER[2] = inlet_tALKER[2];
+		hold_val[2] = inlet_tALKER[2];
+	}
+	if (param_K2i && inlet_tALKER[3] < hold_val[3]) outlet_tALKER[3] = hold_val[3];
+	else {
+		outlet_tALKER[3] = inlet_tALKER[3];
+		hold_val[3] = inlet_tALKER[3];
+	}
+	if (param_K3i && inlet_tALKER[4] < hold_val[4]) outlet_tALKER[4] = hold_val[4];
+	else {
+		outlet_tALKER[4] = inlet_tALKER[4];
+		hold_val[4] = inlet_tALKER[4];
+	}
+	if (param_K4i && inlet_tALKER[5] < hold_val[5]) outlet_tALKER[5] = hold_val[5];
+	else {
+		outlet_tALKER[5] = inlet_tALKER[5];
+		hold_val[5] = inlet_tALKER[5];
+	}
+	if (param_K5i && inlet_tALKER[6] < hold_val[6]) outlet_tALKER[6] = hold_val[6];
+	else {
+		outlet_tALKER[6] = inlet_tALKER[6];
+		hold_val[6] = inlet_tALKER[6];
+	}
+	if (param_K6i && inlet_tALKER[7] < hold_val[7]) outlet_tALKER[7] = hold_val[7];
+	else {
+		outlet_tALKER[7] = inlet_tALKER[7];
+		hold_val[7] = inlet_tALKER[7];
+	}
+	if (param_K7i && inlet_tALKER[8] < hold_val[8]) outlet_tALKER[8] = hold_val[8];
+	else {
+		outlet_tALKER[8] = inlet_tALKER[8];
+		hold_val[8] = inlet_tALKER[8];
+	}
+	if (param_K8i && inlet_tALKER[9] < hold_val[9]) outlet_tALKER[9] = hold_val[9];
+	else {
+		outlet_tALKER[9] = inlet_tALKER[9];
+		hold_val[9] = inlet_tALKER[9];
+	}
+	if (param_K9i && inlet_tALKER[10] < hold_val[10]) outlet_tALKER[10] = hold_val[10];
+	else {
+		outlet_tALKER[10] = inlet_tALKER[10];
+		hold_val[10] = inlet_tALKER[10];
+	}
+	if (param_K10i && inlet_tALKER[11] < hold_val[11]) outlet_tALKER[11] = hold_val[11];
+	else {
+		outlet_tALKER[11] = inlet_tALKER[11];
+		hold_val[11] = inlet_tALKER[11];
+	}
+	//pass thru unaffected
+	outlet_tALKER[12] = inlet_tALKER[12];
+	outlet_tALKER[13] = inlet_tALKER[13];
+	outlet_tALKER[14] = inlet_tALKER[14];
+	outlet_tALKER[15] = inlet_tALKER[15];
+}
+if (inlet_reset | param_reset) {
+     for(int i = 0; i < 16; i++) {
+	hold_val[i] = 0;
+}
+}]]></code.krate>
+   </obj.normal>
+</objdefs>

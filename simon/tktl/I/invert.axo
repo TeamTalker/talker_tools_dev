@@ -33,10 +33,6 @@ else invert = false;
 if (invert) {
 if (param_ENERGYi) outlet_tALKER[0] = 15 - inlet_tALKER[0];
 else outlet_tALKER[0] = inlet_tALKER[0];
-<<<<<<< HEAD
-=======
-//TODO add check in class for tindex != 7 to adjust inversion
->>>>>>> master
 if (param_PITCHi) outlet_tALKER[1] = 63 - inlet_tALKER[1];
 else outlet_tALKER[1] = inlet_tALKER[1];
 if (param_K1i) outlet_tALKER[2] = 31 - inlet_tALKER[2];
