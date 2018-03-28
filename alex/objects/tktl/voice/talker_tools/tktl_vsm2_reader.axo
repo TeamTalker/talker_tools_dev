@@ -85,6 +85,7 @@ uint32_t vsm2_rom_size;
 
 bool mode;	// 'Normal' / 'Bent'
 bool gate;
+bool frame_trigger;
 bool loop;
 bool glitch;
 bool freeze;
@@ -184,6 +185,7 @@ rate_old      = rate;
 mode          = false;
 gate          = false;
 loop          = false;
+frame_trigger = false;
 glitch        = false;
 freeze        = false;
 step          = false;
@@ -349,6 +351,9 @@ if(param_jump || inlet_jump) {
 //////////////////////////////
 //////////////////////////////
 
+// Reset frame-trigger
+frame_trigger = false;
+
 if(krate_counter == 0) {
 	// Read word every 60 k-rate cycles
 	lpc_indices = get_frame.GetFrame();
@@ -359,8 +364,12 @@ if(krate_counter == 0) {
 	// Check for word-end
 	word_end = get_frame.CheckForWordEnd();
 
-	if(word_end && !loop)
+	if(word_end && !loop) {
 		word_gate = false;
+	} else {
+		// Only sent frame trigger if word still playing
+		frame_trigger = true;	
+	};
 };
 
 /////////////////
@@ -376,9 +385,9 @@ for(int i = 0; i < 12; i++) {
 outlet_tALKER[12] = interp_counter;
 
 // Other multiplexed outlets
-outlet_tALKER[13] = 0;
-outlet_tALKER[14] = 0;
-outlet_tALKER[15] = 0;
+outlet_tALKER[13] = gate;	// Gate
+outlet_tALKER[14] = word_end;	// Word-end
+outlet_tALKER[15] = 0;		// Connection-type (0:INDICES / >0:VALUES)
 
 // Set word-end outlet
 outlet_wordend = word_end;

@@ -11,7 +11,7 @@ Part of the Talkie Tools object set.</sDescription>
       <displays/>
       <params/>
       <attribs>
-         <file name="rom" description="select VSM2-format ROM file"/>
+         <file name="rom"/>
          <combo name="debug" description="display extended info in console">
             <MenuEntries>
                <string>off</string>

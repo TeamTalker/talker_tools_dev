@@ -1,0 +1,212 @@
+<patch-1.0 appVersion="1.0.12">
+   <obj type="env/ahd lin m" uuid="f9b46834ce96425064b4ed7f53ad8b91ea1ac0ef" name="ahd_1" x="588" y="126">
+      <params>
+         <frac32.s.map name="a" value="-64.0"/>
+         <frac32.s.map name="d" value="-43.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="784" y="140">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="700" y="182">
+      <params>
+         <frac32.u.map name="value" value="12.5"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="bool_1" x="504" y="210">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="math/*" uuid="3ac307b9f782049739ed62504081b96d580ea336" name="*_1" x="784" y="210">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="Output" x="854" y="210">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="tktl/voice/talker_tools/tktl voiced source" uuid="20c25aa2-a8ac-4f32-9707-5c28c40fcd00" name="tktl_1" x="504" y="280">
+      <params>
+         <frac32.s.map name="pitch" value="0.0"/>
+         <int32 name="wave" value="1"/>
+         <int32.hradio name="pmode" value="0"/>
+         <bool32.tgl name="glide" value="0"/>
+         <frac32.u.map name="glideamt" value="32.5"/>
+      </params>
+      <attribs>
+         <combo attributeName="debug" selection="off"/>
+      </attribs>
+   </obj>
+   <obj type="midi/in/keyb mod" uuid="abcd509d15e7d13d5381203fd2b4d0ac6fe57bb3" name="keyb_1" x="392" y="294">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="mix/xfade" uuid="375dc91d218e96cdc9cbc7e92adb48f705ef701a" name="xfade_1" x="770" y="322">
+      <params/>
+      <attribs/>
+   </obj>
+   <patchobj type="patch/object" uuid="d32bfb08-2071-44ac-89ee-1ccd3a82d957" name="i_1" x="294" y="448">
+      <params>
+         <int32 name="lpcpitch" value="60"/>
+      </params>
+      <attribs/>
+      <object id="patch/object" uuid="d32bfb08-2071-44ac-89ee-1ccd3a82d957">
+         <sDescription>positive integer control</sDescription>
+         <author>Johannes Taelman</author>
+         <license>BSD</license>
+         <helpPatch>ctrl.axh</helpPatch>
+         <inlets>
+            <frac32 name="note" description="MIDI note"/>
+         </inlets>
+         <outlets>
+            <frac32buffer.positive name="tALKER"/>
+         </outlets>
+         <displays>
+            <int32.label name="LPC" description=""/>
+            <int32.label name="NOTE"/>
+            <int32.label name="DIFF"/>
+         </displays>
+         <params>
+            <int32 name="lpcpitch" description="LPC pitch index" noLabel="true">
+               <MinValue i="0"/>
+               <MaxValue i="65536"/>
+            </int32>
+         </params>
+         <attribs/>
+         <includes/>
+         <code.declaration><![CDATA[int32_t tktl_lpc_note_table[160] = {
+115790251,90624427,75894288,65458603,57357019,50728464,45113610,40292779,35980152,32191195,28717186,25535391,22642938,19947786,17447433,15126955,12880472,10814328,8883116,7025371,5163085,3501388,1864758,369567,-1076214,-2581968,-3906733,-5281676,-6578478,-7786571,-8895259,-10038868,-11219673,-12285351,-13383262,-14351495,-15346258,-16369048,-17243948,-18140452,-19059657,-20002738,-20775248,-21764591,-22575945,-23405846,-24040965,-24905448,-25567593,-26242038,-27161244,-27866248,-28585213,-29072557,-29816063,-30575116,-31090111,-31876566,-32410496,-32952395,-33502505,-34061083,-34915395,-35204692,-35790294,-36385497,-36990621,-37606001,-38231996,-38549086,-39191697,-39517319,-40177457,-40512082,-41190731,-41534872,-42233097,-42587310,-42945013,-43306276,-44039769,-44412148,-44788385,-45168562,-45552762,-45941072,-46730379,-47131560,-47537225,-47947473,-48362410,-48782143,-48782143,-49206789,-49636458,-50071272,-50511358,-50956843,-51407862,-51407862,-51864557,-52327068,-52795546,-53270149,-53270149,-53751037,-54238381,-54238381,-54732356,-55233147,-55233147,-55740940,-56255935,-56255935,-56778341,-57308374,-57308374,-57846259,-57846259,-58392232,-58392232,-58946546,-58946546,-59509450,-59509450,-60081219,-60662136,-60662136,-60662136,-61252500,-61252500,-61852622,-61852622,-62462831,-62462831,-63083476,-63083476,-63714910,-63714910,-63714910,-64357521,-64357521,-65011712,-65011712,-65011712,-65677906,-65677906,-65677906,-66356555,-66356555,-67048130,-67048130,-67048130,-67753134,-67753134,-67753134,-68472100,-68472100,-68472100,-68472100
+};]]></code.declaration>
+         <code.krate><![CDATA[disp_LPC = tktl_lpc_note_table[param_lpcpitch];
+disp_NOTE = inlet_note;
+disp_DIFF = inlet_note - tktl_lpc_note_table[param_lpcpitch];
+
+outlet_tALKER[1] = param_lpcpitch;]]></code.krate>
+      </object>
+   </patchobj>
+   <patchobj type="patch/object" uuid="d32bfb08-2071-44ac-89ee-1ccd3a82d957" name="i_2" x="896" y="476">
+      <params>
+         <bool32.tgl name="log" value="1"/>
+      </params>
+      <attribs/>
+      <object id="patch/object" uuid="d32bfb08-2071-44ac-89ee-1ccd3a82d957">
+         <sDescription>positive integer control</sDescription>
+         <author>Johannes Taelman</author>
+         <license>BSD</license>
+         <helpPatch>ctrl.axh</helpPatch>
+         <inlets>
+            <frac32 name="note" description="MIDI note"/>
+         </inlets>
+         <outlets/>
+         <displays>
+            <int32.label name="NOTE0" description=""/>
+            <int32.label name="NOTE1"/>
+            <int32.label name="DIFF"/>
+         </displays>
+         <params>
+            <bool32.tgl name="log" description="Log to Patcher Console on/off"/>
+         </params>
+         <attribs/>
+         <includes/>
+         <code.declaration><![CDATA[//
+
+int32_t old_note;
+
+//]]></code.declaration>
+         <code.init><![CDATA[//
+
+old_note = 0;
+
+//]]></code.init>
+         <code.krate><![CDATA[//
+
+if(inlet_note != old_note) {
+	if(param_log)
+		LogTextMessage("Diff: %d", inlet_note - old_note);
+	disp_NOTE0 = old_note;
+	disp_NOTE1 = inlet_note;
+	disp_DIFF = inlet_note - old_note;
+	old_note = inlet_note;
+};
+
+//]]></code.krate>
+      </object>
+   </patchobj>
+   <obj type="osc/square cheap" uuid="58dc60ffca7e6c5029f12ec68787945c669b7a8f" name="square_1" x="616" y="518">
+      <params>
+         <frac32.s.map name="pitch" value="0.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="dial_1" x="462" y="560">
+      <params>
+         <frac32.u.map name="value" value="35.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <comment type="patch/comment" x="224" y="588" text="PITCH index 60 should be approx C3"/>
+   <nets>
+      <net>
+         <source obj="Volume" outlet="out"/>
+         <dest obj="*_1" inlet="a"/>
+      </net>
+      <net>
+         <source obj="vca_1" outlet="o"/>
+         <dest obj="*_1" inlet="b"/>
+      </net>
+      <net>
+         <source obj="ahd_1" outlet="env"/>
+         <dest obj="vca_1" inlet="v"/>
+      </net>
+      <net>
+         <source obj="*_1" outlet="result"/>
+         <dest obj="Output" inlet="right"/>
+         <dest obj="Output" inlet="left"/>
+      </net>
+      <net>
+         <source obj="keyb_1" outlet="gate"/>
+         <dest obj="ahd_1" inlet="trig"/>
+         <dest obj="bool_1" inlet="in"/>
+      </net>
+      <net>
+         <source obj="tktl_1" outlet="voiced"/>
+         <dest obj="xfade_1" inlet="i1"/>
+      </net>
+      <net>
+         <source obj="keyb_1" outlet="note"/>
+         <dest obj="square_1" inlet="pitch"/>
+         <dest obj="i_1" inlet="note"/>
+         <dest obj="tktl_1" inlet="note"/>
+         <dest obj="i_2" inlet="note"/>
+      </net>
+      <net>
+         <source obj="xfade_1" outlet="o"/>
+         <dest obj="vca_1" inlet="a"/>
+      </net>
+      <net>
+         <source obj="square_1" outlet="wave"/>
+         <dest obj="xfade_1" inlet="i2"/>
+      </net>
+      <net>
+         <source obj="dial_1" outlet="out"/>
+         <dest obj="xfade_1" inlet="c"/>
+      </net>
+      <net>
+         <source obj="i_1" outlet="tALKER"/>
+         <dest obj="tktl_1" inlet="TALKEr"/>
+      </net>
+   </nets>
+   <settings>
+      <subpatchmode>no</subpatchmode>
+   </settings>
+   <notes><![CDATA[]]></notes>
+   <windowPos>
+      <x>1032</x>
+      <y>78</y>
+      <width>1360</width>
+      <height>935</height>
+   </windowPos>
+</patch-1.0>

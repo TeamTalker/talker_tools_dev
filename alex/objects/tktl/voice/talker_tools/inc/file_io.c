@@ -5,14 +5,16 @@
 ////////////////////////////
 
 //bool TktlShared::inited = false;
-uint8_t* TktlShared::ptr_vsm_sdram_ = NULL;
-uint8_t* TktlShared::ptr_vsm2_sdram_ = NULL;
-struct TktlVSM2ROMHeader* TktlShared::ptr_vsm2_rom_header_ = NULL;
-struct TktlVSM2WordMeta* TktlShared::ptr_vsm2_word_meta_sdram_ = NULL;
+uint8_t  *TktlShared::ptr_vsm_sdram_ = NULL;
+uint8_t  *TktlShared::ptr_vsm2_sdram_ = NULL;
+struct   TktlVSM2ROMHeader* TktlShared::ptr_vsm2_rom_header_ = NULL;
+struct   TktlVSM2WordMeta* TktlShared::ptr_vsm2_word_meta_sdram_ = NULL;
 uint16_t TktlShared::vsm2_word_count_ = 0;
-uint8_t* TktlShared::ptr_lpc_coef_tables_sdram_ = NULL;
-uint8_t* TktlShared::ptr_lpc_chirp_tables_sdram_ = NULL;
+uint8_t  *TktlShared::ptr_lpc_coef_tables_sdram_ = NULL;
+uint8_t  *TktlShared::ptr_lpc_chirp_tables_sdram_ = NULL;
+uint8_t  *TktlShared::ptr_chirp_pitch_table_sdram_ = NULL;
 uint8_t  TktlShared::vsm2_lpc_tables_id_ = 7;
+uint8_t  TktlShared::rom_chirp_id_ = 0;
 uint8_t  TktlShared::rom_pitch_bits_ = 0;
 uint32_t TktlShared::vsm2_rom_size_ = 0;
 uint8_t  TktlShared::vsm2_preset_index_ = 0;
@@ -106,7 +108,8 @@ uint8_t TktlLoadFileSDRAM(const char *path, uint8_t *&ptr, bool verbose) {
 	// Set pointer (passed in by reference) to data in SDRAM
 	ptr = ptr_data_sdram;
 	
-	LogTextMessage("Binary data file successfully copied to SDRAM (%d bytes)\nSDRAM remaining: %d", bin_size, sdram_get_free());
+	LogTextMessage("Binary data copied to SDRAM (%d bytes)", bin_size);
+	LogTextMessage("SDRAM remaining: %d", sdram_get_free());
 	
 	// Success! Return no error
 	return 0;

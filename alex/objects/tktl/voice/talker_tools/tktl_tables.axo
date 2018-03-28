@@ -142,15 +142,9 @@ disable = false;
 load_status = 1;
 tables = 7;
 
-if(TktlShared::vsm2_word_count_ == 0) {
-	LogTextMessage("ERROR: VSM2 ROM file not loaded, exiting");
-	disable = true;
-	return;
-};
-
-//////////////////////////////////////
-// Attempts to load vsm2 into sdram //
-//////////////////////////////////////
+///////////////////////////////////////////////////////
+// Attempt to load LPC coefficient tables into sdram //
+///////////////////////////////////////////////////////
 
 // Check if file already copied to SDRAM
 // (pointer set in TktlShared class)

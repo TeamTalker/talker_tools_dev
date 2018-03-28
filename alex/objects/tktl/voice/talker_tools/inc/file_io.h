@@ -93,17 +93,19 @@ uint16_t TktlMin16U(uint16_t val, uint16_t max);
 class TktlShared {
 	public:  
 		//static bool inited_;
-		static uint8_t *ptr_vsm_sdram_;
-		static uint8_t *ptr_vsm2_sdram_;
-		static struct TktlVSM2ROMHeader *ptr_vsm2_rom_header_;
-		static struct TktlVSM2WordMeta *ptr_vsm2_word_meta_sdram_;
+		static uint8_t  *ptr_vsm_sdram_;
+		static uint8_t  *ptr_vsm2_sdram_;
+		static struct   TktlVSM2ROMHeader *ptr_vsm2_rom_header_;
+		static struct   TktlVSM2WordMeta *ptr_vsm2_word_meta_sdram_;
 		static uint16_t	vsm2_word_count_;
-		static uint8_t *ptr_lpc_coef_tables_sdram_;
-		static uint8_t *ptr_lpc_chirp_tables_sdram_;
-		static uint8_t vsm2_lpc_tables_id_;
-		static uint8_t rom_pitch_bits_;
+		static uint8_t  *ptr_lpc_coef_tables_sdram_;
+		static uint8_t  *ptr_lpc_chirp_tables_sdram_;
+		static uint8_t  *ptr_chirp_pitch_table_sdram_;
+		static uint8_t  rom_chirp_id_;
+		static uint8_t  vsm2_lpc_tables_id_;
+		static uint8_t  rom_pitch_bits_;
 		static uint32_t	vsm2_rom_size_;
-		static uint8_t vsm2_preset_index_;
+		static uint8_t  vsm2_preset_index_;
 };
 
 /////////////////////////////////////

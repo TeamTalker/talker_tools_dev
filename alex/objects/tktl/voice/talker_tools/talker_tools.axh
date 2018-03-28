@@ -1,26 +1,26 @@
 <patch-1.0 appVersion="1.0.12">
-   <obj type="env/ahd lin m" uuid="f9b46834ce96425064b4ed7f53ad8b91ea1ac0ef" name="ahd_1" x="1050" y="70">
+   <obj type="env/ahd lin m" uuid="f9b46834ce96425064b4ed7f53ad8b91ea1ac0ef" name="ahd_1" x="1120" y="70">
       <params>
          <frac32.s.map name="a" value="-64.0"/>
          <frac32.s.map name="d" value="-44.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="1260" y="84">
+   <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="1330" y="84">
       <params/>
       <attribs/>
    </obj>
-   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1162" y="126">
+   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1232" y="126">
       <params>
-         <frac32.u.map name="value" value="38.5"/>
+         <frac32.u.map name="value" value="64.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl_vsm2_loader" uuid="37f03a79-ba9e-44af-957e-28f486587b54" name="tktl_vsm2_loader_1" x="168" y="140">
+   <obj type="tktl/voice/talker_tools/tktl loader vsm2" uuid="37f03a79-ba9e-44af-957e-28f486587b54" name="tktl_3" x="168" y="140">
       <params/>
       <attribs>
-         <file attributeName="rom" file="../../../../../other_documents/talkie/working/filenameheader.vsm2"/>
-         <combo attributeName="debug" selection="off"/>
+         <file attributeName="rom" file="ROMs/talkieROM.vsm2"/>
+         <combo attributeName="debug" selection="on"/>
       </attribs>
    </obj>
    <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="gate" x="378" y="154">
@@ -31,7 +31,7 @@
       <params/>
       <attribs/>
    </obj>
-   <obj type="math/*" uuid="3ac307b9f782049739ed62504081b96d580ea336" name="*_1" x="1260" y="154">
+   <obj type="math/*" uuid="3ac307b9f782049739ed62504081b96d580ea336" name="*_1" x="1330" y="154">
       <params/>
       <attribs/>
    </obj>
@@ -42,9 +42,9 @@
          <spinner attributeName="endNote" value="127"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl_vsm2_reader" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb" name="tktl_vsm2_reader_1" x="168" y="224">
+   <obj type="tktl/voice/talker_tools/tktl reader vsm2" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb" name="tktl_1" x="168" y="224">
       <params>
-         <int32 name="word" value="2"/>
+         <int32 name="word" value="38"/>
          <frac32.u.map name="rate" value="32.5"/>
          <frac32.u.map name="bend" value="0.0"/>
          <bool32.tgl name="loop" value="1"/>
@@ -58,7 +58,7 @@
          <combo attributeName="debug" selection="off"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/Talker Tools Tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="Talker_1" x="378" y="224">
+   <obj type="tktl/voice/talker_tools/tktl tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="tktl_4" x="378" y="224">
       <params>
          <int32 name="tables" value="0"/>
          <bool32.tgl name="interpolation" value="1"/>
@@ -67,7 +67,7 @@
          <combo attributeName="debug" selection="off"/>
       </attribs>
    </obj>
-   <patchobj type="patch/object" uuid="6556facb-1322-4429-ba75-7887b2fe92a3" name="demult" x="602" y="224">
+   <patchobj type="patch/object" uuid="6556facb-1322-4429-ba75-7887b2fe92a3" name="demult" x="560" y="224">
       <params/>
       <attribs/>
       <object id="patch/object" uuid="6556facb-1322-4429-ba75-7887b2fe92a3">
@@ -115,318 +115,19 @@ for(int i = 0; i < 16; i++) {
 };]]></code.krate>
       </object>
    </patchobj>
-   <patchobj type="patch/object" uuid="2e3b980b-4415-428f-b6ca-29f283183066" name="Talkie Voiced Source" x="700" y="224">
+   <obj type="tktl/voice/talker_tools/tktl voiced source" uuid="20c25aa2-a8ac-4f32-9707-5c28c40fcd00" name="tktl_2" x="658" y="224">
       <params>
-         <frac32.u.map name="wave" value="0.0"/>
-         <int32.hradio name="oct" value="1"/>
-         <bool32.tgl name="repitch" value="0"/>
-         <int32 name="pmode" value="1"/>
-         <bool32.tgl name="glide" value="0"/>
-         <frac32.u.map name="glideamt" value="28.5"/>
+         <frac32.s.map name="pitch" value="0.0"/>
+         <int32 name="wave" value="0"/>
+         <int32.hradio name="pmode" value="2"/>
+         <bool32.tgl name="glide" value="1"/>
+         <frac32.u.map name="glideamt" value="28.0"/>
       </params>
-      <attribs/>
-      <object id="patch/object" uuid="2e3b980b-4415-428f-b6ca-29f283183066">
-         <sDescription>Talkie Synth</sDescription>
-         <author>toneburst</author>
-         <license>BSD</license>
-         <helpPatch>math.axh</helpPatch>
-         <inlets>
-            <int32.positive name="pitch"/>
-            <frac32.positive name="oct" description="octave transpose"/>
-            <bool32 name="repitch" description="while true, override pitch set with &apos;synthPeriod&apos; inlet with MIDI note value at &apos;note&apos; inlet"/>
-            <frac32.bipolar name="note" description="midi note in"/>
-            <bool32 name="glide" description="glide enable/disable"/>
-            <frac32.positive name="glideamt" description="glide amount (fast to slow)"/>
-         </inlets>
-         <outlets>
-            <frac32buffer.bipolar name="out"/>
-         </outlets>
-         <displays/>
-         <params>
-            <frac32.u.map name="wave" description="select &apos;chirp&apos; waveform"/>
-            <int32.hradio name="oct" description="octave">
-               <MaxValue i="3"/>
-            </int32.hradio>
-            <bool32.tgl name="repitch" description="override pitch set by &apos;synthEnergy&apos; inlet with value at inlet &apos;note&apos; when true"/>
-            <int32 name="pmode" description="pitch-shift mode when &apos;pitch&apos; inlet true">
-               <MinValue i="1"/>
-               <MaxValue i="2"/>
-            </int32>
-            <bool32.tgl name="glide" description="apply glide/glissando to voiced source pitch"/>
-            <frac32.u.map name="glideamt" description="glide/glissando rate (fast to slow)"/>
-         </params>
-         <attribs/>
-         <includes/>
-         <code.declaration><![CDATA[
-
-///////////////////
-///////////////////
-//// VARIABLES ////
-///////////////////
-///////////////////
-
-///////////////
-// Constants //
-///////////////
-
-/*const uint8_t tmsPeriod[64] = {
-	0x00,0x10,0x11,0x12,0x13,0x14,0x15,0x16,\
-	0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,\
-	0x1F,0x20,0x21,0x22,0x23,0x24,0x25,0x26,\
-	0x27,0x28,0x29,0x2A,0x2B,0x2D,0x2F,0x31,\
-	0x33,0x35,0x36,0x39,0x3B,0x3D,0x3F,0x42,\
-	0x45,0x47,0x49,0x4D,0x4F,0x51,0x55,0x57,\
-	0x5C,0x5F,0x63,0x66,0x6A,0x6E,0x73,0x77,\
-	0x7B,0x80,0x85,0x8A,0x8F,0x95,0x9A,0xA0
-};*/
-
-#define CHIRP_SIZE 52
-const int8_t kChirpTables[4][CHIRP_SIZE] = {
-	// TI 0280 PATENT CHIRP
-	{
-		0x00,0x2a,0xd4,0x32,0xb2,0x12,0x25,0x14,\
-		0x02,0xe1,0xc5,0x02,0x5f,0x5a,0x05,0x0f,\
-		0x26,0xfc,0xa5,0xa5,0xd6,0xdd,0xdc,0xfc,\
-		0x25,0x2b,0x22,0x21,0x0f,0xff,0xf8,0xee,\
-		0xed,0xef,0xf7,0xf6,0xfa,0x00,0x03,0x02,\
-		0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00
-	},
-	// TI 2802 CHIRP
-	{
-		0x00,0xa5,0xbd,0xee,0x34,0x73,0x7e,0x3d,\
-		0xe8,0xea,0x34,0x24,0xd1,0x01,0x13,0xc3,\
-		0x0c,0xd2,0xe7,0xdd,0xd9,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00
-	},
-	// TI 2801 CHIRP
-	{
-		0x00,0x2b,0xd4,0x33,0xb3,0x12,0x25,0x14,\
-		0x02,0xe2,0xc6,0x03,0x60,0x5b,0x05,0x0f,\
-		0x26,0xfc,0xa6,0xa5,0xd6,0xdd,0xdd,0xfd,\
-		0x25,0x2b,0x23,0x22,0x0f,0xff,0xf8,0xef,\
-		0xed,0xef,0xf7,0xf7,0xfa,0x01,0x04,0x03,\
-		0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00
-	},
-	// TI LATER CHIRP
-	{
-		0x00,0x03,0x0f,0x28,0x4c,0x6c,0x71,0x50,\
-		0x25,0x26,0x4c,0x44,0x1a,0x32,0x3b,0x13,\
-		0x37,0x1a,0x25,0x1f,0x1d,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-		0x00,0x00,0x00,0x00
-	}
-};
-
-// 8000Hz cycle counts to MIDI notes (error increases with frequency)
-// MIDI Notes C2 (MIDI note #36) - C4 (#60)
-const int8_t kMidiNotes[25] = {
-	122,116,109,103,97,92,87,82,77,73,69,65,61,58,55,51,49,46,43,41,38,36,34,32,31
-};
-// Transpose table for transpose mode 1
-const int8_t kMidiTranspose[25] = {
-	61,55,48,42,36,31,26,21,16,12,8,4,0,-3,-6,-10,-12,-15,-18,-20,-23,-25,-27,-29,-30
-};
-
-///////////////////////////
-// Synth State Variables //
-///////////////////////////
-
-// Synth period (no. 8kHz cycles)
-uint8_t synth_period;
-// Frame frequency
-uint8_t period_counter;
-
-////////////////
-// Slew-state //
-////////////////
-
-int32_t osc_period_slew_state;
-
-///////////////////
-// Params/Inlets //
-///////////////////
-
-uint8_t	wave_index;
-uint32_t	octave;
-uint8_t	osc_period;
-uint32_t	glide;
-uint8_t	chirp;
-int8_t	midi_note;
-
-/////////////
-// Samples //
-/////////////
-
-int32_t sample;
-
-//////////////
-// Counters //
-//////////////
-
-uint8_t	render_counter;
-uint8_t	render_interval;
-int8_t	midi_period;
-
-///////////////////
-///////////////////
-//// FUNCTIONS ////
-///////////////////
-///////////////////
-
-//////////////////
-// Render Audio //
-//////////////////
-
-int8_t TkRenderVoiced() {
-	// Generate voiced source
-	static int16_t voiced_source;
-
-	if (period_counter < osc_period) {
-		period_counter++;
-	} else {
-		period_counter = 0;
-	}
-	if (period_counter < CHIRP_SIZE) {
-		voiced_source = kChirpTables[wave_index][period_counter];
-	} else {
-		voiced_source = 0;
-	}
-	return voiced_source;
-}
-
-///////////////////////
-// Utility Functions //
-///////////////////////
-
-// Scale input to range out_min > out_max
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(int32_t val, int32_t out_min, int32_t out_max) {
-	float x = (float)val;
-	float outmin = (float)out_min;
-	float outmax = (float)out_max;
-	return (int32_t)(x * (outmax - outmin) / 0x07FFFFFF + outmin);
-}
-
-// 8-Bit clamp val to range min > max
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int8_t Clamp8(int8_t val, int8_t min, int8_t max) {
-	return (val <= min) ? min : (val >= max) ? max : val;
-}
-
-// Slew function, with pointer to state variable
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Slew32(int32_t target, int32_t *state, int32_t slew_time, bool enable) {
-	if (enable && slew_time > 0) {
-		*state = ___SMMLA(*state - target, (-1 << 26) + (slew_time >> 1), *state);
-		return *state;
-	} else {
-		*state = target;
-		return target;
-	}
-}
-
-//
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Max(int32_t val, int32_t max) {
-	return(val <= max) ? val : max;
-}
-
-
-
-	]]></code.declaration>
-         <code.init><![CDATA[
-
-LogTextMessage("Initialising toneburst Talkie Synth Voiced Source");
-
-// Counters (count S-Rate cycles)
-render_counter = 0;
-// S-Rate cycle periods for sample-calculate function
-render_interval = 6;
-
-// Calculated output sample value
-sample = 0;
-
-// Inlets/Param values
-wave_index = 0;
-octave = 0;
-osc_period = 0;
-glide = 0;
-chirp = 0;
-
-]]></code.init>
-         <code.krate><![CDATA[
-
-// Synth period, with slew
-synth_period = __USAT(inlet_pitch, 8);
-
-///////////////////
-// Params/Inlets //
-///////////////////
-
-// Wave index 0 - 3
-wave_index = param_wave >> 25;
-// Glissando
-glide = (param_glide || inlet_glide) ? __USAT(param_glideamt + inlet_glideamt, 27) : 0;
-// Octave
-octave = Max(MapU32(inlet_oct, 0, 2) + param_oct, 2);
-
-// Transpose/set period of voiced source
-// if boolean inlet 'pitch' true
-if(inlet_repitch || param_repitch) {
-	// MIDI note number, clamped to range, scaled
-	midi_note = Clamp8(inlet_note >> 21, -40, -16) + 40;
-	// Mode 1: transpose
-	if(param_pmode == 1) {
-		osc_period = synth_period + kMidiTranspose[midi_note];
-	// Mode 2: set period from Note inlet (Vocoder mode)
-	} else if(param_pmode == 2) {
-		osc_period = kMidiNotes[midi_note];
-	}
-} else {
-	osc_period = synth_period;
-}
-osc_period = Slew32(osc_period << 24, &osc_period_slew_state, glide, TRUE) >> 24;
-
-// Switch sample-rate for low/high/mid octaves
-switch(octave) {
-	case 0  :
-		render_interval = 12;
-		break;
-	case 2  :
-		render_interval = 3;
-		break;
-	default :
-		render_interval = 6;
-}
-
-/////////////////
-// Render Loop //
-/////////////////
-
-for(uint8_t j = 0; j < BUFSIZE; j++) {
-
-	///////////////////
-	// Render Sample //
-	///////////////////
-
-	if(render_counter == 0) {
-		sample = TkRenderVoiced();
-	}
-
-	// Increment render counter
-	render_counter = (render_counter < (render_interval - 1)) ? render_counter + 1 : 0;
-
-	// Write samples to output buffer (27 bits)
-	outlet_out[j] = sample << 19;
-}
-
-]]></code.krate>
-      </object>
-   </patchobj>
-   <patchobj type="patch/object" uuid="0c5470ff-da3f-4dc8-9848-fbe7ff65bd4e" name="Talkie Unvoiced Source" x="812" y="224">
+      <attribs>
+         <combo attributeName="debug" selection="off"/>
+      </attribs>
+   </obj>
+   <patchobj type="patch/object" uuid="0c5470ff-da3f-4dc8-9848-fbe7ff65bd4e" name="Talkie Unvoiced Source" x="882" y="224">
       <params>
          <frac32.s.map name="pitch" value="2.0"/>
          <frac32.u.map name="octave" value="64.0"/>
@@ -527,10 +228,10 @@ for(uint8_t j = 0; j < BUFSIZE; j++) {
 ]]></code.krate>
       </object>
    </patchobj>
-   <patchobj type="patch/object" uuid="06902663-1848-4c47-84be-beae9351032a" name="Talkie Mixer" x="938" y="224">
+   <patchobj type="patch/object" uuid="06902663-1848-4c47-84be-beae9351032a" name="Talkie Mixer" x="1008" y="224">
       <params>
          <bool32.tgl name="unvoiced" value="0"/>
-         <frac32.u.map name="bias" value="0.0"/>
+         <frac32.u.map name="bias" value="0.5"/>
          <bool32.tgl name="glide" value="0"/>
          <frac32.u.map name="glideamt" value="52.5"/>
       </params>
@@ -626,7 +327,7 @@ outlet_wave = a >> 35;
 ]]></code.srate>
       </object>
    </patchobj>
-   <patchobj type="patch/object" uuid="1f12a642-3e48-4b0e-9196-1f8ed2821c04" name="LPC Filter" x="1078" y="224">
+   <patchobj type="patch/object" uuid="1f12a642-3e48-4b0e-9196-1f8ed2821c04" name="LPC Filter" x="1148" y="224">
       <params>
          <bool32.tgl name="glide" value="0"/>
          <frac32.u.map name="glideamt" value="31.5"/>
@@ -705,7 +406,8 @@ int32_t errorSample;
 int16_t lpc_clip_analog(int16_t cliptemp) {
 	/* clipping, just like the patent shows:
 	 * the top 10 bits of this result are visible on the digital output IO pin.
-	 * next, if the top 3 bits of the 14 bit result are all the same, the lowest of those 3 bits plus the next 7 bits are the signed analog output, otherwise the low bits are all forced to match the inverse of the topmost bit, i.e.:
+	 * next, if the top 3 bits of the 14 bit result are all the same, the lowest of those 3 bits plus the next 7 bits are the signed analog output,
+	 * otherwise the low bits are all forced to match the inverse of the topmost bit, i.e.:
 	 * 1x xxxx xxxx xxxx -> 0b10000000
 	 * 11 1bcd efgh xxxx -> 0b1bcdefgh
 	 * 00 0bcd efgh xxxx -> 0b0bcdefgh
@@ -876,18 +578,18 @@ m_excitation_data = inlet_excitation >> 19;
 ]]></code.srate>
       </object>
    </patchobj>
-   <obj type="filter/lp" uuid="1427779cf086ab83c8b03eeeac69c2a97759c651" name="LP Filter" x="1218" y="224">
+   <obj type="filter/lp" uuid="1427779cf086ab83c8b03eeeac69c2a97759c651" name="LP Filter" x="1288" y="224">
       <params>
          <frac32.s.map name="pitch" value="64.0"/>
          <frac32.u.map name="reso" value="0.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="Output" x="1330" y="224">
+   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="Output" x="1400" y="224">
       <params/>
       <attribs/>
    </obj>
-   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_10" x="476" y="350">
+   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_10" x="378" y="336">
       <params/>
       <attribs/>
       <object id="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d">
@@ -931,7 +633,7 @@ disp_k10 = inlet_TALKER[9] << 20;
 //]]></code.krate>
       </object>
    </patchobj>
-   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_9" x="476" y="588">
+   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_9" x="1358" y="392">
       <params>
          <int32 name="index" value="4"/>
       </params>
@@ -988,13 +690,8 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
          <dest obj="Talkie Mixer" inlet="unvoicedWave"/>
       </net>
       <net>
-         <source obj="Talkie Voiced Source" outlet="out"/>
-         <dest obj="Talkie Mixer" inlet="voicedWave"/>
-      </net>
-      <net>
          <source obj="demult" outlet="pitch"/>
          <dest obj="Talkie Mixer" inlet="pitch"/>
-         <dest obj="Talkie Voiced Source" inlet="pitch"/>
       </net>
       <net>
          <source obj="demult" outlet="energy"/>
@@ -1050,33 +747,42 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
          <dest obj="Output" inlet="left"/>
       </net>
       <net>
-         <source obj="keyb_1" outlet="note"/>
-         <dest obj="Talkie Voiced Source" inlet="note"/>
-      </net>
-      <net>
          <source obj="keyb_1" outlet="gate"/>
-         <dest obj="tktl_vsm2_reader_1" inlet="gate"/>
+         <dest obj="tktl_1" inlet="gate"/>
       </net>
       <net>
-         <source obj="tktl_vsm2_reader_1" outlet="gate"/>
+         <source obj="tktl_1" outlet="gate"/>
          <dest obj="gate" inlet="in"/>
-         <dest obj="Talker_1" inlet="gate"/>
+         <dest obj="tktl_4" inlet="gate"/>
       </net>
       <net>
-         <source obj="tktl_vsm2_reader_1" outlet="wordend"/>
+         <source obj="tktl_1" outlet="wordend"/>
          <dest obj="word-end" inlet="in"/>
       </net>
       <net>
-         <source obj="tktl_vsm2_reader_1" outlet="tALKER"/>
-         <dest obj="Talker_1" inlet="tALKER"/>
+         <source obj="tktl_1" outlet="tALKER"/>
+         <dest obj="tktl_4" inlet="tALKER"/>
+         <dest obj="hex_10" inlet="TALKER"/>
       </net>
       <net>
-         <source obj="Talker_1" outlet="tALKER"/>
+         <source obj="tktl_4" outlet="tALKER"/>
          <dest obj="demult" inlet="TALKER"/>
       </net>
       <net>
-         <source obj="Talker_1" outlet="gate"/>
+         <source obj="tktl_4" outlet="gate"/>
          <dest obj="ahd_1" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="demult" outlet="TALKER"/>
+         <dest obj="tktl_2" inlet="TALKEr"/>
+      </net>
+      <net>
+         <source obj="tktl_2" outlet="voiced"/>
+         <dest obj="Talkie Mixer" inlet="voicedWave"/>
+      </net>
+      <net>
+         <source obj="keyb_1" outlet="note"/>
+         <dest obj="tktl_2" inlet="note"/>
       </net>
    </nets>
    <settings>
@@ -1084,8 +790,8 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
    </settings>
    <notes><![CDATA[]]></notes>
    <windowPos>
-      <x>923</x>
-      <y>22</y>
+      <x>155</x>
+      <y>88</y>
       <width>1617</width>
       <height>906</height>
    </windowPos>

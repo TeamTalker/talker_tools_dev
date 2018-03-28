@@ -41,6 +41,7 @@ Part of the Talker Tools object set.</sDescription>
       </attribs>
       <file-depends>
          <file-depend localFilename="./data/lpc_chirp_tables.raw" targetPath="/shared/tktl/talker_tools/lpc_chirp_tables.raw"/>
+         <file-depend localFilename="./data/lpc_chirp_pitch.raw" targetPath="/shared/tktl/talker_tools/lpc_chirp_pitch.raw"/>
       </file-depends>
       <includes>
          <include>./inc/file_io.h</include>
@@ -61,6 +62,7 @@ Part of the Talker Tools object set.</sDescription>
 bool disable;
 bool multiple_instance;
 uint8_t load_status;
+uint8_t tables;
 
 ////////////////
 // Pitch vars //
@@ -72,7 +74,7 @@ uint32_t phase_increment;
 int32_t  phase_accumulator;
 int32_t  phase_accumulator_old;
 uint32_t table_counter;
-int32_t glide;
+int32_t  glide;
 
 uint8_t wave_index;
 
@@ -82,9 +84,14 @@ uint8_t wave_index;
 
 // Struct pointer to hold data from LPC CHIRP tables binary file copied to SDRAM
 struct ChirpTables {
-    char   name[16];
+    char    name[16];
     int8_t chirp_table[312];
 } *ptr_lpc_chirp_tables_sdram_start, *ptr_lpc_chirp_tables_sdram;
+
+// Struct pointer to hold LPC pitch table array
+struct LPCPitch {
+	int8_t table[160];
+} *ptr_chirp_pitch_table_sdram;
 
 ///////////////
 // Functions //
@@ -97,33 +104,6 @@ void DisplayChirpData(ChirpTables *chirp, uint8_t verbose) {
 	};
 };
 
-///////////////////
-// Lookup tables //
-///////////////////
-
-// LPC pitch index > Axoloti note
-int32_t tktl_lpc_note_table[160] = {
- 115790251, 90624427, 75894288, 65458603, 57357019, 50728464, 45113610, 40292779,
- 35980152, 32191195, 28717186, 25535391, 22642938, 19947786, 17447433, 15126955,
- 12880472, 10814328, 8883116, 7025371, 5163085, 3501388, 1864758, 369567,-1076214,
--2581968,-3906733,-5281676,-6578478,-7786571,-8895259,-10038868,-11219673,
--12285351,-13383262,-14351495,-15346258,-16369048,-17243948,-18140452,-19059657,
--20002738,-20775248,-21764591,-22575945,-23405846,-24040965,-24905448,-25567593,
--26242038,-27161244,-27866248,-28585213,-29072557,-29816063,-30575116,-31090111,
--31876566,-32410496,-32952395,-33502505,-34061083,-34915395,-35204692,-35790294,
--36385497,-36990621,-37606001,-38231996,-38549086,-39191697,-39517319,-40177457,
--40512082,-41190731,-41534872,-42233097,-42587310,-42945013,-43306276,-44039769,
--44412148,-44788385,-45168562,-45552762,-45941072,-46730379,-47131560,-47537225,
--47947473,-48362410,-48782143,-48782143,-49206789,-49636458,-50071272,-50511358,
--50956843,-51407862,-51407862,-51864557,-52327068,-52795546,-53270149,-53270149,
--53751037,-54238381,-54238381,-54732356,-55233147,-55233147,-55740940,-56255935,
--56255935,-56778341,-57308374,-57308374,-57846259,-57846259,-58392232,-58392232,
--58946546,-58946546,-59509450,-59509450,-60081219,-60662136,-60662136,-60662136,
--61252500,-61252500,-61852622,-61852622,-62462831,-62462831,-63083476,-63083476,
--63714910,-63714910,-63714910,-64357521,-64357521,-65011712,-65011712,-65011712,
--65677906,-65677906,-65677906,-66356555,-66356555,-67048130,-67048130,-67048130,
--67753134,-67753134,-67753134,-68472100,-68472100,-68472100,-68472100
-};
 
 // LPC Tables ID > CHIRP ID
 uint8_t chirp_id[8] = {0, 0, 1, 1, 2, 2, 3, 3};
@@ -138,6 +118,10 @@ LogTextMessage("/////////////////////////////////////////////\n");
 
 if(attr_debug)
 	LogTextMessage("Extended information display on\n");
+
+disable = false;
+load_status = 1;
+tables = 7;
 
 ///////////////
 // Init vars //
@@ -173,7 +157,7 @@ if(!TktlShared::ptr_lpc_chirp_tables_sdram_) {
 
 	// Check return of file-loader function
 	if(load_status != 0) {
-		LogTextMessage("ERROR: File-loader failed to load file to SDRAM, exiting");
+		LogTextMessage("ERROR: File-loader failed to load CHIRP data file to SDRAM, exiting");
 		return;
 	};
 } else {
@@ -181,15 +165,38 @@ if(!TktlShared::ptr_lpc_chirp_tables_sdram_) {
 	multiple_instance = true;
 };
 
-////////////////////
-// Setup pointers //
-////////////////////
+////////////////////////////////
+// Setup CHIRP table pointers //
+////////////////////////////////
 
 // Cast pointer to struct type, and make copy so we
 // can increment pointer location for alternative tables
 ptr_lpc_chirp_tables_sdram_start = (struct ChirpTables *)TktlShared::ptr_lpc_chirp_tables_sdram_;
 ptr_lpc_chirp_tables_sdram = ptr_lpc_chirp_tables_sdram_start;
 
+///////////////////////////////////////////////////////
+// Attempt to load LPC coefficient tables into sdram //
+///////////////////////////////////////////////////////
+
+// Check if file already copied to SDRAM
+// (pointer set in TktlShared class)
+if(!TktlShared::ptr_chirp_pitch_table_sdram_) {
+
+	// Run file-loader (in incl. file) and save return-status
+	// Pointer to SDRAM data passed by reference
+	load_status = TktlLoadFileSDRAM("/shared/tktl/talker_tools/lpc_chirp_pitch.raw", TktlShared::ptr_chirp_pitch_table_sdram_, attr_debug);
+
+	// Check return of file-loader function
+	if(load_status != 0) {
+		LogTextMessage("ERROR: File-loader failed to load CHIRP pitch file to SDRAM, exiting");
+		return;
+	};
+} else {
+	LogTextMessage("Reusing data loaded by the first instance of this object.");
+	multiple_instance = true;
+};
+
+ptr_chirp_pitch_table_sdram = (struct LPCPitch *)TktlShared::ptr_chirp_pitch_table_sdram_;
 
 //]]></code.init>
       <code.krate><![CDATA[//
@@ -213,11 +220,11 @@ if(param_wave == 0) {
 switch(param_pmode) {
 	case 0 :
 		// MODE 0: LPC pitch
-		pitch = tktl_lpc_note_table[inlet_TALKEr[1]];
+		pitch = ptr_chirp_pitch_table_sdram->table[inlet_TALKEr[1]];
 		break;
 	case 1 :
 		// MODE 1: Mix LPC pitch and Note
-		pitch = tktl_lpc_note_table[inlet_TALKEr[1]] + (inlet_note + 8388608);
+		pitch = ptr_chirp_pitch_table_sdram->table[inlet_TALKEr[1]] + (inlet_note + 8388608);
 		break;
 	case 2 :
 		// MODE 2: Note only
