@@ -54,6 +54,9 @@ if(attr_debug)
 
 multiple_instance = false;
 
+// LPC Tables ID > CHIRP ID
+uint8_t chirp_id[8] = {0, 0, 1, 1, 2, 2, 3, 3};
+
 //////////////////////////////////////
 // Attempts to load vsm2 into sdram //
 //////////////////////////////////////
@@ -101,6 +104,11 @@ if(!TktlShared::ptr_vsm2_sdram_) {
 			TktlShared::rom_pitch_bits_ = 6;
 		else
 			TktlShared::rom_pitch_bits_ = 5;
+	};
+
+	// CHIRP ID (default 7 for tms5220)
+	if(TktlShared::rom_chirp_id_ != 7) {
+		TktlShared::rom_chirp_id_ = chirp_id[TktlShared::vsm2_lpc_tables_id_];
 	};
 
 } else {

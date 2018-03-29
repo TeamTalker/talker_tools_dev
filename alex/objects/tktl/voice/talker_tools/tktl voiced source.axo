@@ -104,11 +104,6 @@ void DisplayChirpData(ChirpTables *chirp, uint8_t verbose) {
 	};
 };
 
-
-// LPC Tables ID > CHIRP ID
-uint8_t chirp_id[8] = {0, 0, 1, 1, 2, 2, 3, 3};
-
-
 //]]></code.declaration>
       <code.init><![CDATA[//
 
@@ -206,7 +201,7 @@ ptr_chirp_pitch_table_sdram = (struct LPCPitch *)TktlShared::ptr_chirp_pitch_tab
 ////////////////////////
 
 if(param_wave == 0) {
-	ptr_lpc_chirp_tables_sdram = ptr_lpc_chirp_tables_sdram_start + chirp_id[TktlShared::vsm2_lpc_tables_id_];
+	ptr_lpc_chirp_tables_sdram = ptr_lpc_chirp_tables_sdram_start + TktlShared::rom_chirp_id_;
 } else if (wave_index != param_wave) {
 	ptr_lpc_chirp_tables_sdram = ptr_lpc_chirp_tables_sdram_start + (param_wave - 1);
 	DisplayChirpData(ptr_lpc_chirp_tables_sdram, attr_debug);	 

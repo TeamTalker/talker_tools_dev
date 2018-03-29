@@ -83,18 +83,18 @@ uint32_t vsm2_rom_size;
 // Control vars //
 //////////////////
 
-bool mode;	// 'Normal' / 'Bent'
-bool gate;
-bool frame_trigger;
-bool loop;
-bool glitch;
-bool freeze;
-bool step;
-bool setjump;
-bool jump;
+bool      mode;	// 'Normal' / 'Bent'
+bool      gate;
+uint32_t  frame_trigger;
+bool      loop;
+bool      glitch;
+bool      freeze;
+bool      step;
+bool      setjump;
+bool      jump;
 
-bool word_end;
-bool word_gate;
+bool      word_end;
+bool      word_gate;
 
 //////////////
 // Counters //
@@ -185,7 +185,7 @@ rate_old      = rate;
 mode          = false;
 gate          = false;
 loop          = false;
-frame_trigger = false;
+frame_trigger = 0;
 glitch        = false;
 freeze        = false;
 step          = false;
@@ -234,7 +234,7 @@ rate = __USAT(param_rate + inlet_rate, 27);
 
 if(rate != rate_old) {
 	// Calculate new k-rate counter divisor
-	krate_divisor = MapU32(CurveLog32(rate), 480, 15);
+	krate_divisor = MapU32(CurveLog32(rate), 480, 31);
 	// Calculate new inter-frame interpolation counter divisor
 	interp_divisor = Min32(krate_divisor >> 3, 1);
 	rate_old = rate;
@@ -351,9 +351,6 @@ if(param_jump || inlet_jump) {
 //////////////////////////////
 //////////////////////////////
 
-// Reset frame-trigger
-frame_trigger = false;
-
 if(krate_counter == 0) {
 	// Read word every 60 k-rate cycles
 	lpc_indices = get_frame.GetFrame();
@@ -368,7 +365,7 @@ if(krate_counter == 0) {
 		word_gate = false;
 	} else {
 		// Only sent frame trigger if word still playing
-		frame_trigger = true;	
+		frame_trigger = 1;	
 	};
 };
 
@@ -381,8 +378,11 @@ for(int i = 0; i < 12; i++) {
 	outlet_tALKER[i] = lpc_indices.indices_[i];
 };
 
-// Interpolation position outlet
-outlet_tALKER[12] = interp_counter;
+// Frame trigger outlet
+outlet_tALKER[12] = frame_trigger;
+
+// Reset frame-trigger
+frame_trigger = 0;
 
 // Other multiplexed outlets
 outlet_tALKER[13] = gate;	// Gate
@@ -402,11 +402,6 @@ outlet_gate =(!word_gate)? false : gate;
 
 // Master K-Rate counter
 krate_counter = (krate_counter >= krate_divisor_freeze) ? 0 : krate_counter + 1;
-
-// Increment interpolation counter after setting outlet
-if(krate_counter % interp_divisor == 0) {
-	interp_counter = (interp_counter <= 6) ? interp_counter + 1 : 7;
-};
 
 ///////////////////////////
 // Update first-run flag //
