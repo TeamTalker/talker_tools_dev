@@ -13,6 +13,8 @@
 // LPC indices //
 /////////////////
 
+// This is the return object for LPC frame data.
+// Call every K-Rate cycle
 class TktlLpcIndices {
 public:
     uint8_t indices_[12];
@@ -31,12 +33,18 @@ public:
          10 k9
          11 k10
      */
+	bool is_reading_;
+	bool frame_trigger_;
+	bool word_end_trigger_;
+	bool is_rest_frame_;
+	bool is_unvoiced_frame_;
+	bool is_repeat_frame_;
     // Constructor
     TktlLpcIndices();
     // Zero all K values
-    void Silence();
+    void SetSilent();
     // Zero K values for unvoiced frame
-    void Unvoiced();
+    void SetUnvoiced();
 };
 
 /////////////////////////////
@@ -49,11 +57,11 @@ public:
     
     uint8_t *byte_;
     uint8_t bit_;
-    uint8_t fragment_;			// (Currently unused)
+    uint8_t fragment_;		 // (Currently unused)
     
     uint8_t *saved_byte_;
     uint8_t saved_bit_;
-    uint8_t saved_fragment_;	// (Currently unused)
+    uint8_t saved_fragment_; // (Currently unused)
     
     // Constructor
     TktlLpcStreamPosition();
@@ -100,11 +108,14 @@ public:
     // Set glitch
     void SetGlitch(bool glitch);
     
-    // Stop reading frame data
-    void StopRead();
+    // Set Freeze
+    void SetFreeze(bool freeze);
     
-    // Check for word-end
-    bool CheckForWordEnd();
+    // Step frame (when in freeze mode only)
+    void StepFrozenFrame();
+    
+    // Stop reading frame data
+    void StopReading();
     
     // Set jump-point
     void SetJumpPoint();
@@ -112,12 +123,11 @@ public:
     // Set play-head to jump-point
     void SetToJumpPoint();
       
-	// Increment counters
-	// TODO
-    void tick();
-        
-     // Get frame
-    TktlLpcIndices GetFrame();
+	// 
+    TktlLpcIndices Tick();
+    
+    // Set frame-length (ticks)
+    void SetFrameLength(uint32_t length);
     
 private:
     uint8_t *ptr_word_start_;
@@ -128,6 +138,10 @@ private:
     uint8_t frame_energy_;
     uint8_t pitch_bits_;
     bool word_end_;
+    uint32_t counter_;
+    uint8_t frame_length_;
+    bool freeze_;
+    
     
     // Stream position object instance
     TktlLpcStreamPosition head_;
@@ -142,9 +156,6 @@ private:
     
     // Read LPC frame, updating index values in 'lpc_indices'
     void ReadFrame();
-    
-    // TODO
-    void IncrementCounters();
 };
 
 #include "lpc_stream.cpp"
