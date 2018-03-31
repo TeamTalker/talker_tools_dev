@@ -102,6 +102,9 @@ public:
     // Set word-start pointer
     void StartWord(uint8_t *ptr);
     
+    // Play mode (Gated | Oneshot)
+    void SetPlayMode(bool mode);
+    
     // Set loop
     void SetLoop(bool loop);
     
@@ -139,7 +142,7 @@ private:
     uint8_t pitch_bits_;
     bool word_end_;
     uint32_t counter_;
-    uint8_t frame_length_;
+    uint32_t frame_length_;
     bool freeze_;
     
     

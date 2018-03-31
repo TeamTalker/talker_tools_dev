@@ -104,7 +104,7 @@ TktlGetLPCFrame::TktlGetLPCFrame() {
 	word_end_       = false;
 	pitch_bits_		= 6;	// Default VSM2
 	counter_		= 0;
-	frame_length_   = 60;	// 25ms default
+	frame_length_   = 75;	// 25ms default
 	// Zero indices in lpc_indices_ instance
 	lpc_indices_.SetSilent();
 };
@@ -123,6 +123,11 @@ void TktlGetLPCFrame::StartWord(uint8_t *ptr) {
 		read_word_               = true;
 		lpc_indices_.is_reading_ = true;
     };
+};
+
+// Play mode (Gated | Oneshot)
+void TktlGetLPCFrame::SetPlayMode(bool mode) {
+	//
 };
 
 // Set loop
@@ -147,8 +152,9 @@ void TktlGetLPCFrame::StepFrozenFrame() {
 
 // Stop reading frame data
 void TktlGetLPCFrame::StopReading() {
-	read_word_ = false;
-    lpc_indices_.SetSilent();
+	read_word_               = false;
+	lpc_indices_.is_reading_ = false;
+	lpc_indices_.SetSilent();
 };
 
 // Set jump-point
@@ -179,7 +185,8 @@ TktlLpcIndices TktlGetLPCFrame::Tick() {
 		ReadFrame();
 	};	
 	// Update counter (if freeze true, counter will keep incrementing forever)
-	counter_ = ((counter_ < frame_length_) || (freeze_)) ? counter_ + 1 : 0;	
+	//counter_ = ((counter_ < frame_length_) || (freeze_) || (!read_word_)) ? counter_ + 1 : 0;
+	counter_ = (counter_ < frame_length_) ? counter_ + 1 : 0;
 	// Bit-shift pitch indices up by one, if there are only 5 bits for pitch
 	if(pitch_bits_ == 5)
     	lpc_indices_.indices_[1] <<= 1;    

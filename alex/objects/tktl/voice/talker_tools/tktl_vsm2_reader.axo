@@ -28,16 +28,14 @@ Part of the Talkie Tools object set.</sDescription>
             <MaxValue i="1024"/>
          </int32>
          <frac32.u.map name="rate" description="playback rate"/>
-         <frac32.u.map name="bend"/>
+         <frac32.u.map name="bend" description=""/>
+         <bool32.tgl name="oneshot" description="one-shot playback on/off"/>
          <bool32.tgl name="loop" description="loop on/off"/>
          <bool32.tgl name="freeze" description="freeze"/>
          <bool32.mom name="step" description="step frame (only works in freeze mode)"/>
          <bool32.mom name="setjump" description="set jump-point"/>
          <bool32.mom name="jump" description="jump to jump-point"/>
          <bool32.mom name="glitch" description="glitch on/off"/>
-         <int32.hradio name="playmode" description="play-mode (one-shot | gated)">
-            <MaxValue i="2"/>
-         </int32.hradio>
       </params>
       <attribs>
          <combo name="debug" description="display extended info in console">
@@ -99,6 +97,7 @@ bool      jump;
 // Playback rate
 uint32_t rate;
 uint32_t rate_old;
+uint32_t frame_length;
 
 ///////////////
 // Functions //
@@ -159,6 +158,7 @@ ptr_vsm2_word_meta = ptr_vsm2_word_meta_start;
 // Default playback rate
 rate          = 0;
 rate_old      = 1;
+frame_length  = 0;
 
 mode          = false;
 gate          = false;
@@ -209,7 +209,8 @@ rate = __USAT(param_rate + inlet_rate, 27);
 
 if(rate != rate_old) {
 	// Calculate new k-rate counter divisor
-	get_frame.SetFrameLength(MapU32(CurveLog32(rate), 480, 31));
+	frame_length = MapU32(CurveLog32(rate), 480, 31);
+	get_frame.SetFrameLength(frame_length);
 	rate_old = rate;
 }
 
@@ -221,7 +222,7 @@ if(rate != rate_old) {
 
 if(inlet_gate) {
 	// RISING EDGE
-	if(!gate) {
+	if((!gate) || (firstrun)) {
 		// Only reset counter to get new frame if freeze not enabled
 		// TODO: fix so that first frame is captured if patch starts with freeze ON
 		get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
@@ -231,7 +232,7 @@ if(inlet_gate) {
 	// FALLING EDGE
 	if(gate) {
 		// Stop playback on falling edge if in gated playback mode
-		if(param_playmode == 1)
+		if(!param_oneshot)
 			get_frame.StopReading();
 	};
 	gate = false;
@@ -334,7 +335,7 @@ outlet_tALKER[12] = lpc_indices.frame_trigger_;
 // Other multiplexed outlets
 
 // Gate
-gate_word = (param_playmode == 0) ? lpc_indices.is_reading_ : gate && lpc_indices.is_reading_;
+gate_word = (param_oneshot) ? lpc_indices.is_reading_ : gate && lpc_indices.is_reading_;
 
 outlet_tALKER[13] = gate_word;
 outlet_tALKER[14] = lpc_indices.word_end_trigger_;

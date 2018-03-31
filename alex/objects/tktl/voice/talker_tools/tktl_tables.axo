@@ -52,16 +52,46 @@ Part of the Talker Tools object set.</sDescription>
  * Couriersud
  *
  * Your work is amazing!
+ * 
  */
 
 /////////////////
 // Object vars //
 /////////////////
 
-bool disable;
 bool multiple_instance;
 uint8_t load_status;
 uint8_t tables;
+
+//////////////////////////////
+// Counter and Trigger vars //
+//////////////////////////////
+
+// Frame trigger
+bool frame_trigger;
+// interpolation reset flag
+bool reset_flag;
+
+// Counters
+uint32_t  krate_counter;
+uint32_t  interp_counter;
+uint32_t  interp_counter_old;
+
+// Sets interpolation cycle rate
+uint8_t   interp_divisor;
+
+// Current interpolation coefficient from table
+uint8_t interp_coeff;
+
+/////////////////////////
+// Interpolation flags //
+/////////////////////////
+
+bool unvoiced_flag_new;
+bool unvoiced_flag_old;
+bool silent_flag_new;
+bool silent_flag_old;
+bool interp_inhibit;
 
 ////////////////////////
 // STRUCT DEFINITIONS //
@@ -87,24 +117,6 @@ struct LpcIndexValues {
 	int32_t	pitch;
 	int32_t	kvals[10];
 } lpc_frame_old, lpc_frame_new, lpc_frame_out;
-
-///////////////
-// Variables //
-///////////////
-
-// Inter-frame interpolation position (current, previous)
-uint8_t interp_position;
-uint8_t interp_position_old;
-
-// Current interpolation coefficient from table
-uint8_t interp_coeff;
-
-// Interpolation inhibit flags
-bool unvoiced_flag_new;
-bool unvoiced_flag_old;
-bool silent_flag_new;
-bool silent_flag_old;
-bool interp_inhibit;
 
 ///////////////
 // Functions //
@@ -134,13 +146,38 @@ LogTextMessage("//////////////////////////////////////////\n");
 if(attr_debug)
 	LogTextMessage("Extended information display on\n");
 
-////////////////////
-// Error-checking //
-////////////////////
 
-disable = false;
-load_status = 1;
-tables = 7;
+////////////////
+// Frame vars //
+////////////////
+
+multiple_instance	= false;
+load_status		= 0;
+tables 			= TktlShared::vsm2_lpc_tables_id_;
+
+// Frame trigger
+frame_trigger		= false;
+// interpolation reset flag
+reset_flag		= false;
+
+// Counters
+krate_counter		= 0;
+interp_counter		= 0;
+interp_counter_old	= 0;
+
+// Sets interpolation cycle rate
+interp_divisor		= 20;
+
+// Current interpolation coefficient from table
+interp_coeff		= 0;
+
+/////////////////////////////
+// Zero frame data structs //
+/////////////////////////////
+
+lpc_frame_old		    = {0};
+lpc_frame_new		    = {0};
+lpc_frame_out		    = {0};
 
 ///////////////////////////////////////////////////////
 // Attempt to load LPC coefficient tables into sdram //
@@ -168,35 +205,8 @@ if(!TktlShared::ptr_lpc_coef_tables_sdram_) {
 ptr_lpc_tables_sdram_start = (struct LpcTables *)TktlShared::ptr_lpc_coef_tables_sdram_;
 ptr_lpc_tables_sdram = ptr_lpc_tables_sdram_start;
 
-////////////////
-// Frame vars //
-////////////////
-
-interp_position		= 0;
-interp_position_old		= 8;
-interp_coeff			= 0;
-
-unvoiced_flag_new		= false;
-unvoiced_flag_old		= false;
-silent_flag_new		= false;
-silent_flag_old		= false;
-interp_inhibit			= true;
-
-/////////////////////////////
-// Zero frame data structs //
-/////////////////////////////
-
-lpc_frame_old			= {0};
-lpc_frame_new			= {0};
-lpc_frame_out		     = {0};
-
 //]]></code.init>
       <code.krate><![CDATA[//
-
-
-// Disable object k-rate execution is disable set
-if(disable)
-	return;
 
 /////////////////////
 // Set table index //
@@ -214,6 +224,10 @@ if(tables != param_tables) {
 	tables = param_tables;
 };
 
+// Check for frame trigger
+// Also disable interpolation if set to value > 1
+frame_trigger = inlet_tALKER[12];
+
 ///////////////////////
 //Interpolate frames //
 ///////////////////////
@@ -221,12 +235,24 @@ if(tables != param_tables) {
 // Interpolation turn ON
 if(param_interpolation) {
 
-	interp_position = inlet_tALKER[12];
+	/////////////////////////////////////
+	// Reset counters on frame trigger //
+	/////////////////////////////////////
+	
+	if(frame_trigger == 1) {
+		krate_counter  = 0;
+		interp_counter = 0;
+
+		// Set reset flag if frame trigger happens during interpolation cycle
+		if((interp_counter > 0) && (interp_counter < 8)) {
+			reset_flag = true;
+		};
+	};
 
 	// Only interpolate if interpolation position changes
-	if(interp_position != interp_position_old) {
+	if(interp_counter != interp_counter_old) {
 
-		switch(interp_position) {
+		switch(interp_counter) {
 
 			/////////////////////
 			// First sub-frame //
@@ -239,7 +265,10 @@ if(param_interpolation) {
 				// Calculate new silent flag (true if energy = 0)
 				silent_flag_new = (inlet_tALKER[0] == 0) ? true : false;
 
-				// Decide if interpolation is required for this frame
+				////////////////////////////////////////////////////////
+				// Decide if interpolation is required for this frame //
+				////////////////////////////////////////////////////////
+				
 				if (((!unvoiced_flag_old) && unvoiced_flag_new) || ((unvoiced_flag_old) && !unvoiced_flag_new) || ((silent_flag_old) && !silent_flag_new))
 					interp_inhibit = true;
 				else
@@ -263,14 +292,25 @@ if(param_interpolation) {
 				lpc_frame_new.kvals[8] = ptr_lpc_tables_sdram -> table_k[8][inlet_tALKER[10]];
 				lpc_frame_new.kvals[9] = ptr_lpc_tables_sdram -> table_k[9][inlet_tALKER[11]];
 
+				///////////////////////////////////////////////////
+				// Set initial values for start of interpolation //
+				///////////////////////////////////////////////////
+				
 				if(interp_inhibit) {
 					// Interpolation IS inhibited
 					// Set outputs to new frame
 					lpc_frame_out = lpc_frame_new;
 				} else {
-					// Interpolation NOT inhibited
-					// Set outputs to old frame for start of interpolation sub-frame sequence
-					lpc_frame_out = lpc_frame_old;
+					// Interpolation NOT inhibited, so interpolation will begin
+					// If reset flag not set, set outputs to old frame for start of interpolation sub-frame sequence
+					// If flag set, don't update frame_out because reset happened mid-interpolation
+					if(!reset_flag)
+						// Update output struct if previous interpolation cycle completed
+						lpc_frame_out = lpc_frame_old;
+					else
+						// Else reset flag and use values from last sub-frame reached before reset
+						reset_flag = false;
+						
 				};
 				break;
 
@@ -278,7 +318,7 @@ if(param_interpolation) {
 			// (Potentially) interpolated sub-frames //
 			///////////////////////////////////////////
 
-			case 1: case 2: case 3: case 4: case 5: case 6:
+			case 1: case 2: case 3: case 4: case 5: case 6: case 7:
 
 				// Interpolation inhibited
 				if(interp_inhibit) {
@@ -286,7 +326,7 @@ if(param_interpolation) {
 				// Interpolate
 				} else {
 					// Extract current interpolation coefficient from table
-					interp_coeff = ptr_lpc_tables_sdram -> table_interp[interp_position];
+					interp_coeff = ptr_lpc_tables_sdram -> table_interp[interp_counter];
 
 					lpc_frame_out.energy   += ((lpc_frame_new.energy   - lpc_frame_out.energy)   >> interp_coeff);
 					lpc_frame_out.pitch    += ((lpc_frame_new.pitch    - lpc_frame_out.pitch)    >> interp_coeff);
@@ -307,7 +347,7 @@ if(param_interpolation) {
 			////////////////////
 
 			// Always new frame
-			case 7 :
+			case 8 :
 				// Set voiced/unvoiced flag for next frame
 				unvoiced_flag_old = unvoiced_flag_new;
 				silent_flag_old = silent_flag_new;
@@ -318,7 +358,7 @@ if(param_interpolation) {
 
 				break;
 
-		};	// End sub-frame logic
+		};	// End sub-frame logic		
 	};	// End interp_position change
 
 	/////////////////////////////
@@ -339,7 +379,7 @@ if(param_interpolation) {
 	outlet_tALKER[11] = lpc_frame_out.kvals[9];
 
 	// Update old interp_position
-	interp_position_old = interp_position;
+	interp_counter_old = interp_counter;
 
 
 //////////////////////////////
@@ -377,6 +417,18 @@ outlet_tALKER[15] = inlet_tALKER[15];
 ///////////////////////
 
 outlet_gate = inlet_gate;
+
+/////////////////////
+// Update counters //
+/////////////////////
+
+// Increment k-rate counter
+krate_counter++;
+
+// Increment interpolation counter
+if(krate_counter % interp_divisor == 0) {
+	interp_counter = (interp_counter <= 6) ? interp_counter + 1 : 7;
+};
 
 //]]></code.krate>
    </obj.normal>
