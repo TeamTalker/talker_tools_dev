@@ -35,6 +35,9 @@ Part of the Talkie Tools object set.</sDescription>
          <bool32.mom name="setjump" description="set jump-point"/>
          <bool32.mom name="jump" description="jump to jump-point"/>
          <bool32.mom name="glitch" description="glitch on/off"/>
+         <int32.hradio name="playmode" description="play-mode (one-shot | gated)">
+            <MaxValue i="2"/>
+         </int32.hradio>
       </params>
       <attribs>
          <combo name="debug" description="display extended info in console">
@@ -85,32 +88,13 @@ uint32_t vsm2_rom_size;
 
 bool      mode;	// 'Normal' / 'Bent'
 bool      gate;
-uint32_t  frame_trigger;
+bool		gate_word;
 bool      loop;
 bool      glitch;
 bool      freeze;
 bool      step;
 bool      setjump;
 bool      jump;
-
-bool      word_end;
-bool      word_gate;
-
-//////////////
-// Counters //
-//////////////
-
-// K-rate cycle-counter
-uint32_t krate_counter;
-
-// Division of k-rate cycles
-// (determines playback-rate)
-uint32_t krate_divisor;
-uint32_t krate_divisor_freeze;
-
-// Divisor and counter for interframe interpolation
-uint32_t interp_counter;
-uint32_t interp_divisor;
 
 // Playback rate
 uint32_t rate;
@@ -172,28 +156,19 @@ ptr_vsm2_word_meta_start = TktlShared::ptr_vsm2_word_meta_sdram_;
 vsm2_rom_size = TktlShared::vsm2_rom_size_;
 ptr_vsm2_word_meta = ptr_vsm2_word_meta_start;
 
-// Init K-Rate Counter(s)
-krate_counter        = 1;
-krate_divisor        = 75;	// 75 k-rate cycles = 25ms
-krate_divisor_freeze = 0;
-interp_divisor       = krate_divisor >> 4;
-
 // Default playback rate
-rate          = krate_divisor;
-rate_old      = rate;
+rate          = 0;
+rate_old      = 1;
 
 mode          = false;
 gate          = false;
+gate_word     = false;
 loop          = false;
-frame_trigger = 0;
 glitch        = false;
 freeze        = false;
 step          = false;
 jump          = false;
 setjump       = false;
-
-word_end      = false;
-word_gate     = true;
 
 get_frame.SetPitchBits(TktlShared::rom_pitch_bits_);
 
@@ -234,9 +209,7 @@ rate = __USAT(param_rate + inlet_rate, 27);
 
 if(rate != rate_old) {
 	// Calculate new k-rate counter divisor
-	krate_divisor = MapU32(CurveLog32(rate), 480, 31);
-	// Calculate new inter-frame interpolation counter divisor
-	interp_divisor = Min32(krate_divisor >> 3, 1);
+	get_frame.SetFrameLength(MapU32(CurveLog32(rate), 480, 31));
 	rate_old = rate;
 }
 
@@ -247,17 +220,20 @@ if(rate != rate_old) {
 /////////////////////
 
 if(inlet_gate) {
+	// RISING EDGE
 	if(!gate) {
 		// Only reset counter to get new frame if freeze not enabled
 		// TODO: fix so that first frame is captured if patch starts with freeze ON
-		if(!freeze) {
-			get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
-			krate_counter = 0;
-			word_gate = true;
-		};
+		get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
 	};
 	gate = true;
 } else {
+	// FALLING EDGE
+	if(gate) {
+		// Stop playback on falling edge if in gated playback mode
+		if(param_playmode == 1)
+			get_frame.StopReading();
+	};
 	gate = false;
 };
 
@@ -279,10 +255,8 @@ if(param_loop || inlet_loop) {
 
 if(param_glitch || inlet_glitch) {
 	get_frame.SetGlitch(true);
-	glitch = true;
 } else {
 	get_frame.SetGlitch(false);
-	glitch = false;
 };
 
 ///////////////////
@@ -292,15 +266,9 @@ if(param_glitch || inlet_glitch) {
 // Set freeze to false if this is first k-rate cycle
 // Allows first frame LPC to be captured, if patch starts with freeze on
 if(param_freeze || inlet_freeze) {
-	if(!firstrun) {
-		// Set k-rate divisor to high value if freeze
-		// Prevents frame-update running
-		krate_divisor_freeze = 4294967295;
-		freeze = true;
-	};
+	get_frame.SetFreeze(true);
 } else {
-	krate_divisor_freeze = krate_divisor;
-	freeze = false;
+	get_frame.SetFreeze(false);
 };
 
 
@@ -309,9 +277,8 @@ if(param_freeze || inlet_freeze) {
 /////////////////////////////
 
 if(param_step || inlet_step) {
-	if(!step && freeze) {
-		krate_counter = 0;
-		interp_counter = 0;
+	if(!step) {
+		get_frame.StepFrozenFrame();
 		step = true;
 	};
 } else {
@@ -338,7 +305,6 @@ if(param_setjump || inlet_setjump) {
 if(param_jump || inlet_jump) {
 	if(!jump) {
 		get_frame.SetToJumpPoint();
-		krate_counter = 1;
 		jump = true;
 	};
 } else {
@@ -351,23 +317,7 @@ if(param_jump || inlet_jump) {
 //////////////////////////////
 //////////////////////////////
 
-if(krate_counter == 0) {
-	// Read word every 60 k-rate cycles
-	lpc_indices = get_frame.GetFrame();
-
-	// Zero interpolation counter
-	interp_counter = 0;
-
-	// Check for word-end
-	word_end = get_frame.CheckForWordEnd();
-
-	if(word_end && !loop) {
-		word_gate = false;
-	} else {
-		// Only sent frame trigger if word still playing
-		frame_trigger = 1;	
-	};
-};
+lpc_indices = get_frame.Tick();
 
 /////////////////
 // Set outlets //
@@ -379,29 +329,22 @@ for(int i = 0; i < 12; i++) {
 };
 
 // Frame trigger outlet
-outlet_tALKER[12] = frame_trigger;
-
-// Reset frame-trigger
-frame_trigger = 0;
+outlet_tALKER[12] = lpc_indices.frame_trigger_;
 
 // Other multiplexed outlets
-outlet_tALKER[13] = gate;	// Gate
-outlet_tALKER[14] = word_end;	// Word-end
+
+// Gate
+gate_word = (param_playmode == 0) ? lpc_indices.is_reading_ : gate && lpc_indices.is_reading_;
+
+outlet_tALKER[13] = gate_word;
+outlet_tALKER[14] = lpc_indices.word_end_trigger_;
 outlet_tALKER[15] = 0;		// Connection-type (0:INDICES / >0:VALUES)
 
-// Set word-end outlet
-outlet_wordend = word_end;
-
 // Set gate outlet
-// (false if word-end true)
-outlet_gate =(!word_gate)? false : gate;
+outlet_gate = gate_word;
 
-//////////////////////////
-// Increment counter(s) //
-//////////////////////////
-
-// Master K-Rate counter
-krate_counter = (krate_counter >= krate_divisor_freeze) ? 0 : krate_counter + 1;
+// Word-end outlet
+outlet_wordend = lpc_indices.word_end_trigger_;
 
 ///////////////////////////
 // Update first-run flag //
