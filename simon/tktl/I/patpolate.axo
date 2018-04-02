@@ -1,0 +1,94 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="patpolate" uuid="50c04e2d-d279-4907-a307-03eab6edd5ba">
+      <sDescription>Play with the interpolation tick, place between Reader and Table. Syncmode let&apos;s you choose between four modes:
+1. interpolation ticks are output at a given rate an pattern (set via knob and pattern editor)
+2. same as 1, except resets on wordend
+3. interpolation ticks are read from the readers output, so you get 1 tick per change in the lcpdata, output follows pattern
+4. same as 3, except resets on wordend
+
+Part of the Talkie Tools object set.</sDescription>
+      <author>Team Talker</author>
+      <license>BSD</license>
+      <inlets>
+         <frac32buffer.positive name="tALKER"/>
+         <bool32.risingfalling name="enable"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.positive name="tALKER"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.mom name="enable"/>
+         <frac32.u.map name="rate"/>
+         <int32.hradio name="syncmode" description="rate | rate &amp; wordend | sync | sync &amp; wordend">
+            <MaxValue i="4"/>
+         </int32.hradio>
+         <bin16 name="pattern"/>
+         <int32 name="patternlength">
+            <MinValue i="0"/>
+            <MaxValue i="16"/>
+         </int32>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[bool tick;
+uint8_t pattern_counter = 0;
+uint8_t pattern_counter_old = 0;
+uint16_t rate_max = 0;
+uint16_t rate_counter = 0;
+
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(int64_t val, int32_t out_min, int32_t out_max) {
+	
+	return (((val * (out_max - out_min)) / 0x07FFFFFF) + out_min);
+};
+//
+//// Logarithmic interpolation for 27-bit param/inlet values
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t CurveLog32(int32_t val) {
+	// Invert range
+	int32_t inv = (1<<27) - val;
+	//Multiply of the MSB (arm instruction)
+	int32_t curve = (1<<27) - ___SMMUL(inv<<3,inv<<2);
+	
+	return curve;
+};]]></code.declaration>
+      <code.krate><![CDATA[//pass thru unaffected
+for(int i = 0; i < 12; i++) {
+	outlet_tALKER[i] = inlet_tALKER[i];
+};
+
+//do some magic/mangling to interpolation ticks...
+rate_max = MapU32(CurveLog32(param_rate), 520, 15);
+if (inlet_tALKER[14] && (param_syncmode == 3 || param_syncmode == 1)){
+	pattern_counter = 0;
+	rate_counter = 0;
+}
+if (param_syncmode > 1) {
+	tick = inlet_tALKER[12];
+	
+} else {
+	if (rate_counter < rate_max) {
+		rate_counter++;
+		tick = 0;
+	} else { 
+		tick = 1;
+		rate_counter = 0;
+	}	
+}
+
+if (tick) pattern_counter++;
+	if (param_enable | inlet_enable) {
+		if (pattern_counter - pattern_counter_old) {
+			if ((param_pattern >> (pattern_counter - 1) ) & 1) outlet_tALKER[12] = 1;
+			else outlet_tALKER[12] = 0;
+		} else outlet_tALKER[12] = 0;
+} else outlet_tALKER[12] = inlet_tALKER[12];
+
+if (pattern_counter > param_patternlength) pattern_counter = 0;
+pattern_counter_old = pattern_counter;
+
+//pass thru unaffected
+outlet_tALKER[13] = inlet_tALKER[13];
+outlet_tALKER[14] = inlet_tALKER[14];
+outlet_tALKER[15] = inlet_tALKER[15];]]></code.krate>
+   </obj.normal>
+</objdefs>

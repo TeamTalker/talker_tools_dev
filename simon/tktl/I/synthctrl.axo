@@ -9,6 +9,7 @@
       </inlets>
       <outlets>
          <frac32buffer.positive name="tALKER"/>
+         <bool32 name="gate"/>
       </outlets>
       <displays/>
       <params>
@@ -31,7 +32,8 @@
       <code.declaration><![CDATA[int32_t ccompl = 0;
 int32_t morph = 0;
 bool gate = 0;
-uint8_t interp_counter = 0;]]></code.declaration>
+bool tick = 0;
+uint8_t tick_counter = 0;]]></code.declaration>
       <code.krate><![CDATA[if (!param_morph) {
 	ccompl = 1<<9;
 	morph = 0;
@@ -78,14 +80,22 @@ outlet_tALKER[10] = a>>9;
 
 a = (param_K10i >> 24) * ccompl + inlet_tALKER[11] * morph;
 outlet_tALKER[11] = a>>9;
-if (interp_counter<8) interp_counter++;
-else interp_counter = 0;
-a = (interp_counter) * ccompl + inlet_tALKER[12] * morph;
-outlet_tALKER[12] = a>>9;
+
+if (tick_counter < 60) {
+	tick_counter++;
+	tick = 0;	
+} else {
+	tick = 1;
+	tick_counter = 0;
+}
+if (inlet_tALKER[12]) tick = 1;
+
+outlet_tALKER[12] = tick;
 if (inlet_gate | param_gate | inlet_tALKER[13]) gate = true;
 else gate = false;
-outlet_tALKER[13] = gate; 
-outlet_tALKER[14] = 0;
+outlet_tALKER[13] = gate;
+outlet_gate = gate;
+outlet_tALKER[14] = inlet_tALKER[14];
 outlet_tALKER[15] = 0;]]></code.krate>
    </obj.normal>
 </objdefs>
