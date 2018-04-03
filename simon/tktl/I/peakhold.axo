@@ -29,7 +29,7 @@
          <bool32.tgl name="K10i"/>
       </params>
       <attribs/>
-      <code.declaration><![CDATA[uint8_t hold_val[11];
+      <code.declaration><![CDATA[uint8_t hold_val[12];
 bool hold = false;]]></code.declaration>
       <code.krate><![CDATA[if (param_hold | inlet_hold) hold = true;
 else hold = false;

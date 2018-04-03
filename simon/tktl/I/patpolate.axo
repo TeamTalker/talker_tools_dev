@@ -5,6 +5,8 @@
 2. same as 1, except resets on wordend
 3. interpolation ticks are read from the readers output, so you get 1 tick per change in the lcpdata, output follows pattern
 4. same as 3, except resets on wordend
+5. sync to external &quot;clock&quot; (lfo, clock tick etc.)
+6. same as 5, except pattern will be reset on wordend
 
 Part of the Talkie Tools object set.</sDescription>
       <author>Team Talker</author>
@@ -12,6 +14,8 @@ Part of the Talkie Tools object set.</sDescription>
       <inlets>
          <frac32buffer.positive name="tALKER"/>
          <bool32.risingfalling name="enable"/>
+         <bool32.risingfalling name="extsync"/>
+         <bool32.risingfalling name="reset"/>
       </inlets>
       <outlets>
          <frac32buffer.positive name="tALKER"/>
@@ -20,17 +24,18 @@ Part of the Talkie Tools object set.</sDescription>
       <params>
          <bool32.mom name="enable"/>
          <frac32.u.map name="rate"/>
-         <int32.hradio name="syncmode" description="rate | rate &amp; wordend | sync | sync &amp; wordend">
-            <MaxValue i="4"/>
+         <int32.hradio name="syncmode" description="rate | rate &amp; wordend | sync | sync &amp; wordend | external | external &amp; wordend">
+            <MaxValue i="6"/>
          </int32.hradio>
          <bin16 name="pattern"/>
          <int32 name="patternlength">
-            <MinValue i="0"/>
+            <MinValue i="1"/>
             <MaxValue i="16"/>
          </int32>
       </params>
       <attribs/>
-      <code.declaration><![CDATA[bool tick;
+      <code.declaration><![CDATA[bool tick = 0;
+bool ext_tick = 0;
 uint8_t pattern_counter = 0;
 uint8_t pattern_counter_old = 0;
 uint16_t rate_max = 0;
@@ -58,24 +63,42 @@ for(int i = 0; i < 12; i++) {
 
 //do some magic/mangling to interpolation ticks...
 rate_max = MapU32(CurveLog32(param_rate), 520, 15);
-if (inlet_tALKER[14] && (param_syncmode == 3 || param_syncmode == 1)){
+if (inlet_reset || (inlet_tALKER[14] && (param_syncmode & 1 == 1))){
 	pattern_counter = 0;
 	rate_counter = 0;
 }
-if (param_syncmode > 1) {
-	tick = inlet_tALKER[12];
-	
-} else {
+
+switch (param_syncmode) {
+	case 0:
+	case 1:
 	if (rate_counter < rate_max) {
 		rate_counter++;
-		tick = 0;
+		
 	} else { 
 		tick = 1;
 		rate_counter = 0;
 	}	
+	break;
+	case 2:
+	case 3:
+	tick = inlet_tALKER[12];
+	break;
+	case 4:
+	case 5:
+	if (inlet_extsync && !ext_tick) {
+		ext_tick = 1;
+		tick = 1; 
+	}
+	if (!inlet_extsync && ext_tick) {
+		ext_tick = 0;
+	}
+	break;
 }
 
-if (tick) pattern_counter++;
+if (tick) {
+	pattern_counter++;
+	tick = 0;
+}
 	if (param_enable | inlet_enable) {
 		if (pattern_counter - pattern_counter_old) {
 			if ((param_pattern >> (pattern_counter - 1) ) & 1) outlet_tALKER[12] = 1;

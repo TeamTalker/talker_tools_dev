@@ -27,13 +27,13 @@
          <bool32.tgl name="K10i"/>
       </params>
       <attribs/>
-      <code.declaration><![CDATA[uint8_t hold_val[16];
+      <code.declaration><![CDATA[uint8_t hold_val[12];
 bool hold = false;]]></code.declaration>
       <code.krate><![CDATA[if (param_hold | inlet_hold) hold = true;
 else hold = false;
 if (!hold) {
 	for(int i = 0; i < 16; i++) {
-		hold_val[i] = inlet_tALKER[i];
+	if (i<12)	hold_val[i] = inlet_tALKER[i];
 		outlet_tALKER[i] = inlet_tALKER[i];	
 	};
 	

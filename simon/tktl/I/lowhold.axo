@@ -28,7 +28,7 @@
          <bool32.tgl name="K10i"/>
       </params>
       <attribs/>
-      <code.declaration><![CDATA[uint8_t hold_val[11];
+      <code.declaration><![CDATA[uint8_t hold_val[12];
 uint8_t thresh_22, thresh_23, thresh_24;
 bool hold = false;
 bool init = false;]]></code.declaration>

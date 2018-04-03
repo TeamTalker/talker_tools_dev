@@ -1,0 +1,95 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="randomize" uuid="c6bfab26-1c1d-483d-9dd1-83c8a1430a21">
+      <sDescription>Randomize selected Bands.
+
+Modes:
+
+1) Randomize band on change
+2) Randomize band on wordend</sDescription>
+      <author>Team Talker</author>
+      <license>BSD</license>
+      <inlets>
+         <frac32buffer.positive name="tALKER"/>
+         <bool32.risingfalling name="randomize"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.positive name="tALKER"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.mom name="randomize"/>
+         <int32.hradio name="mode" description="every frame | wordend">
+            <MaxValue i="2"/>
+         </int32.hradio>
+         <bool32.tgl name="ENERGYi"/>
+         <bool32.tgl name="PITCHi"/>
+         <bool32.tgl name="K1i"/>
+         <bool32.tgl name="K2i"/>
+         <bool32.tgl name="K3i"/>
+         <bool32.tgl name="K4i"/>
+         <bool32.tgl name="K5i"/>
+         <bool32.tgl name="K6i"/>
+         <bool32.tgl name="K7i"/>
+         <bool32.tgl name="K8i"/>
+         <bool32.tgl name="K9i"/>
+         <bool32.tgl name="K10i"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[uint8_t old_val[12];
+bool has_changed[12];
+int32_t rand_1;
+int32_t rand_2;
+bool randomize = 0;
+bool gen_rnd = 0;]]></code.declaration>
+      <code.krate><![CDATA[if (inlet_randomize | param_randomize) randomize = 1;
+else randomize = 0;
+if (param_mode) gen_rnd = inlet_tALKER[14];
+else gen_rnd = inlet_tALKER[12];
+if (randomize) {
+if (gen_rnd) {
+rand_1 = GenerateRandomNumber();
+rand_2 = GenerateRandomNumber();
+}
+if (param_ENERGYi && has_changed[0]) outlet_tALKER[0] = rand_1 & 0xF;
+else outlet_tALKER[0] = inlet_tALKER[0];
+if (param_PITCHi && has_changed[1]) outlet_tALKER[1] = (rand_1>>4) & 0x3F;
+else outlet_tALKER[1] = inlet_tALKER[1];
+if (param_K1i && has_changed[2]) outlet_tALKER[2] = (rand_1>>10) & 0x1F;
+else outlet_tALKER[2] = inlet_tALKER[2]; 
+if (param_K2i && has_changed[3]) outlet_tALKER[3] = (rand_1>>15) & 0x1F;
+else outlet_tALKER[3] = inlet_tALKER[3];
+if (param_K3i && has_changed[4]) outlet_tALKER[4] = (rand_1>>20) & 0xF;
+else outlet_tALKER[4] = inlet_tALKER[4];
+if (param_K4i && has_changed[5]) outlet_tALKER[5] = (rand_1>>24) & 0xF;
+else outlet_tALKER[5] = inlet_tALKER[5];
+if (param_K5i && has_changed[6]) outlet_tALKER[6] = (rand_1>>28) & 0xF;
+else outlet_tALKER[6] = inlet_tALKER[6];
+if (param_K6i && has_changed[7]) outlet_tALKER[7] = (rand_2) & 0xF;
+else outlet_tALKER[7] = inlet_tALKER[7];
+if (param_K7i && has_changed[8]) outlet_tALKER[8] = (rand_2>>4) & 0xF;
+else outlet_tALKER[8] = inlet_tALKER[8];
+if (param_K8i && has_changed[9]) outlet_tALKER[9] = (rand_2>>8) & 0x7;
+else outlet_tALKER[9] = inlet_tALKER[9];
+if (param_K9i && has_changed[10]) outlet_tALKER[10] = (rand_2>>11) & 0x7; 
+else outlet_tALKER[10] = inlet_tALKER[10];
+if (param_K10i && has_changed[11]) outlet_tALKER[11] = (rand_2>>14) & 0x7; 
+else outlet_tALKER[11] = inlet_tALKER[11];     
+} else {
+	//bypass mode
+	for(int i = 0; i < 12; i++) {
+	outlet_tALKER[i] = inlet_tALKER[i];
+};
+}
+//save current input
+for (int i = 0; i < 12; i++) {
+	if (old_val[i] - inlet_tALKER[i]) has_changed[i] = 1;
+	else has_changed[i] = 0;
+	old_val[i] = inlet_tALKER[i];
+}
+//pass thru unaffected
+outlet_tALKER[12] = inlet_tALKER[12];
+outlet_tALKER[13] = inlet_tALKER[13];
+outlet_tALKER[14] = inlet_tALKER[14];
+outlet_tALKER[15] = inlet_tALKER[15];]]></code.krate>
+   </obj.normal>
+</objdefs>
