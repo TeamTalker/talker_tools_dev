@@ -1,0 +1,108 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="randgen" uuid="f99d3446-5dab-4c1e-8769-1cbd3d0cfcde">
+      <sDescription>Generate random values for all bands.
+
+Mode switches between rate control and external sync.
+
+Part of the Talkie Tools object set.</sDescription>
+      <author>Team Talker</author>
+      <license>BSD</license>
+      <inlets>
+         <bool32.risingfalling name="enable"/>
+         <bool32.risingfalling name="extsync"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.positive name="tALKER"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.mom name="enable"/>
+         <int32.hradio name="mode" description="rate | external">
+            <MaxValue i="2"/>
+         </int32.hradio>
+         <frac32.u.map name="rate"/>
+      </params>
+      <attribs/>
+      <code.declaration><![CDATA[bool tick = 0;
+bool ext_tick = 0;
+bool enable = 0;
+bool update = 0;
+uint16_t rate_max = 0;
+uint16_t rate_counter = 0;
+int32_t rand_1;
+int32_t rand_2;
+uint8_t rand_val[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(int64_t val, int32_t out_min, int32_t out_max) {
+	
+	return (((val * (out_max - out_min)) / 0x07FFFFFF) + out_min);
+};
+//
+//// Logarithmic interpolation for 27-bit param/inlet values
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t CurveLog32(int32_t val) {
+	// Invert range
+	int32_t inv = (1<<27) - val;
+	//Multiply of the MSB (arm instruction)
+	int32_t curve = (1<<27) - ___SMMUL(inv<<3,inv<<2);
+	
+	return curve;
+};]]></code.declaration>
+      <code.krate><![CDATA[rate_max = MapU32(CurveLog32(param_rate), 4000, 15);
+if (param_enable | inlet_enable) enable = 1;
+else enable = 0;
+
+switch (param_mode) {
+	case 0:
+	if (rate_counter < rate_max) {
+		rate_counter++;
+		
+	} else { 
+		rand_1 = GenerateRandomNumber();
+		rand_2 = GenerateRandomNumber();
+		tick = 1;
+		rate_counter = 0;
+	}	
+	break;
+	
+	case 1:
+	if (inlet_extsync && !ext_tick) {
+		ext_tick = 1;
+		tick = 1; 
+		rand_1 = GenerateRandomNumber();
+		rand_2 = GenerateRandomNumber();
+	}
+	if (!inlet_extsync && ext_tick) {
+		ext_tick = 0;
+	}
+	break;
+}
+
+if (tick && enable) {	
+rand_val[0] = (rand_1) & 0xF;
+rand_val[1] = (rand_1>>4) & 0x3F;
+rand_val[2] = (rand_1>>10) & 0x1F;
+rand_val[3] = (rand_1>>15) & 0x1F;
+rand_val[4] = (rand_1>>20) & 0xF;
+rand_val[5] = (rand_1>>24) & 0xF;
+rand_val[6] = (rand_1>>28) & 0xF;
+rand_val[7] = (rand_2) & 0xF;
+rand_val[8] = (rand_2>>4) & 0xF;
+rand_val[9] = (rand_2>>8) & 0x7;
+rand_val[10] = (rand_2>>11) & 0x7; 
+rand_val[11] = (rand_2>>14) & 0x7; 
+rand_val[12] = 1;
+rand_val[13] = 1;
+tick = 0;
+update = 1;
+	} else update = 0;
+
+for(int i = 0; i < 12; i++) {
+	outlet_tALKER[i] = rand_val[i];
+};
+outlet_tALKER[12] = update;
+outlet_tALKER[13] = 0;
+outlet_tALKER[14] = 0;
+outlet_tALKER[15] = 0;]]></code.krate>
+   </obj.normal>
+</objdefs>
