@@ -52,20 +52,21 @@ __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Min32(int32_t val, i
 //	// Return val in correct 27-bit integer range
 //	return (int32_t)(x * (outMax - outMin) / 0x07FFFFFF + outMin);
 //};
-//
-//// Scale input to 0 > out_max range
-//__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t ScaleU32(int32_t val, int32_t out_max) {
-//	return (int32_t)(float)val * (float)out_max / 0x07FFFFFF;
-//};
 
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(int32_t val, int32_t out_min, int32_t out_max) {
-	float x = (float)val;
-	float outMin = (float)out_min;
-	float outMax = (float)out_max;
-	return (int32_t)(x * (outMax - outMin) / 0x07FFFFFF + outMin);
+// Scale input to 0 > out_max range
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t ScaleU32(int32_t val, int32_t out_max) {
+	int64_t a = (int64_t)out_max * val;
+    return a >> 27;
 };
-//
-//// Logarithmic interpolation for 27-bit param/inlet values
+
+// Map value between min and max. Taken from TSG/math/map object by Johannes Elliesen
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(int32_t val, int32_t out_min, int32_t out_max) {
+      int64_t a = (int64_t)out_max * val;
+      a += (int64_t)out_min * ((128 << 20) - val);
+      return a >> 27;
+};
+
+// Logarithmic interpolation for 27-bit param/inlet values
 __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t CurveLog32(int32_t val) {
 	// Transform inlet val to float in 0 - 1 range
 	float inf = val * (float)(1.0f / (1 << 27));

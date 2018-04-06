@@ -7,17 +7,19 @@ Part of the Talkie Tools object set.</sDescription>
       <helpPatch>talker_tools.axh</helpPatch>
       <inlets>
          <int32.positive name="word" description="word-select"/>
+         <bool32.risingfalling name="bend"/>
+         <frac32.positive name="bendposition"/>
          <bool32.risingfalling name="gate" description="play word"/>
-         <frac32.positive name="rate" description="playback rate"/>
          <bool32.risingfalling name="loop" description="loop on/off"/>
          <bool32.risingfalling name="freeze" description="freeze"/>
          <bool32.rising name="step" description="frame-step (only active when freeze turned on)"/>
          <bool32.rising name="setjump" description="set jump-point"/>
          <bool32.rising name="jump" description="jump to saved jump-point"/>
          <bool32.risingfalling name="glitch" description="glitch"/>
+         <frac32.positive name="rate" description="playback rate"/>
       </inlets>
       <outlets>
-         <frac32buffer name="tALKER" description="Talker Tools index connection (NOT AUDIO!)"/>
+         <frac32buffer name="tALKER" description="Talker Tools I-Bus connection (NOT AUDIO!)"/>
          <bool32 name="gate" description="gate signal out"/>
          <bool32.pulse name="wordend" description="pulse on word-end"/>
       </outlets>
@@ -27,8 +29,9 @@ Part of the Talkie Tools object set.</sDescription>
             <MinValue i="0"/>
             <MaxValue i="1024"/>
          </int32>
-         <frac32.u.map name="rate" description="playback rate"/>
-         <frac32.u.map name="bend" description=""/>
+         <bool32.tgl name="bend"/>
+         <frac32.u.map name="bendposition" description=""/>
+         <bool32.tgl name="play" description="play word"/>
          <bool32.tgl name="oneshot" description="one-shot playback on/off"/>
          <bool32.tgl name="loop" description="loop on/off"/>
          <bool32.tgl name="freeze" description="freeze"/>
@@ -36,6 +39,7 @@ Part of the Talkie Tools object set.</sDescription>
          <bool32.mom name="setjump" description="set jump-point"/>
          <bool32.mom name="jump" description="jump to jump-point"/>
          <bool32.mom name="glitch" description="glitch on/off"/>
+         <frac32.u.map name="rate" description="playback rate"/>
       </params>
       <attribs>
          <combo name="debug" description="display extended info in console">
@@ -54,7 +58,7 @@ Part of the Talkie Tools object set.</sDescription>
          <include>./inc/lpc_stream.h</include>
          <include>./inc/toneburst-utility-functions.h</include>
       </includes>
-      <code.declaration><![CDATA[//
+      <code.declaration><![CDATA[// START LOCAL DATA
 
 ///////////////////////
 // Object state vars //
@@ -68,8 +72,15 @@ bool firstrun;
 ///////////////
 
 uint16_t word_count;
-uint32_t word_index_new;
+uint32_t word_index;
 uint32_t word_index_old;
+
+struct BentData {
+	//char spelling[8];
+	uint8_t spelling[8];
+} *bend_data;
+
+uint8_t bend_spelling[8];
 
 /////////////
 // Structs //
@@ -84,15 +95,19 @@ uint32_t vsm2_rom_size;
 // Control vars //
 //////////////////
 
-bool      mode;	// 'Normal' / 'Bent'
+// Flags
+bool      bend;
 bool      gate;
-bool		gate_word;
 bool      loop;
 bool      glitch;
 bool      freeze;
 bool      step;
 bool      setjump;
 bool      jump;
+
+
+uint32_t bend_position;
+uint32_t bend_position_old;
 
 // Playback rate
 uint32_t rate;
@@ -120,8 +135,8 @@ uint32_t frame_length;
 TktlGetLPCFrame get_frame;
 TktlLpcIndices lpc_indices;
 
-//]]></code.declaration>
-      <code.init><![CDATA[//
+// END LOCAL DATA]]></code.declaration>
+      <code.init><![CDATA[// START INIT
 
 LogTextMessage("\n//////////////////////////////////////////");
 LogTextMessage("// Initialising Talkie Tools ROM Reader //");
@@ -150,6 +165,12 @@ if(TktlShared::vsm2_word_count_ == 0) {
 //////////////////////
 
 word_count = TktlShared::vsm2_word_count_;
+word_index        = 0;
+word_index_old    = 1023;
+
+bend_position     = 0;
+bend_position_old = 0;
+bend_data         = {};
 
 ptr_vsm2_word_meta_start = TktlShared::ptr_vsm2_word_meta_sdram_;
 vsm2_rom_size = TktlShared::vsm2_rom_size_;
@@ -158,11 +179,10 @@ ptr_vsm2_word_meta = ptr_vsm2_word_meta_start;
 // Default playback rate
 rate          = 0;
 rate_old      = 1;
-frame_length  = 0;
+frame_length  = 75;
 
-mode          = false;
+bend          = false;
 gate          = false;
-gate_word     = false;
 loop          = false;
 glitch        = false;
 freeze        = false;
@@ -176,10 +196,10 @@ get_frame.SetPitchBits(TktlShared::rom_pitch_bits_);
 // Display Word Meta //
 ///////////////////////
 
-TktlDisplayWordMeta(attr_debug, word_index_new, ptr_vsm2_word_meta);
+TktlDisplayWordMeta(attr_debug, word_index, ptr_vsm2_word_meta);
 
-//]]></code.init>
-      <code.krate><![CDATA[//
+// END INIT]]></code.init>
+      <code.krate><![CDATA[// START K-RATE
 
 //////////////////////////////////////
 // Exit early if no word-data found //
@@ -188,16 +208,27 @@ TktlDisplayWordMeta(attr_debug, word_index_new, ptr_vsm2_word_meta);
 if(disable)
 	return;
 
-///////////////////////////
-// Update word selection //
-///////////////////////////
+//////////////////////
+// New word-pointer //
+//////////////////////
 
-word_index_new = Max16(param_word, (word_count -1) + inlet_word);
+word_index = Max16(param_word, (word_count -1) + inlet_word);
+bend_position = ScaleU32(__USAT(inlet_bendposition + param_bendposition, 27), TktlShared::vsm2_rom_size_);
 
-if(word_index_new !=  word_index_old) {
-	ptr_vsm2_word_meta = ptr_vsm2_word_meta_start + word_index_new;
-	TktlDisplayWordMeta(attr_debug, word_index_new, ptr_vsm2_word_meta);
-	word_index_old = word_index_new;
+if(param_bend || inlet_bend) {
+	if((bend_position != bend_position_old) || (!bend)) {
+		get_frame.SetWordStart(TktlShared::ptr_vsm2_sdram_ + bend_position);
+		bend_position_old = bend_position;
+	};
+	bend = true;
+} else {
+	if((word_index != word_index_old) || (bend)) {
+		ptr_vsm2_word_meta = ptr_vsm2_word_meta_start + word_index;
+		TktlDisplayWordMeta(attr_debug, word_index, ptr_vsm2_word_meta);
+		get_frame.SetWordStart(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta -> lpc_entry_point);
+		word_index_old = word_index;
+	};
+	bend = false;
 };
 
 //////////////////
@@ -209,33 +240,9 @@ rate = __USAT(param_rate + inlet_rate, 27);
 
 if(rate != rate_old) {
 	// Calculate new k-rate counter divisor
-	frame_length = MapU32(CurveLog32(rate), 480, 31);
+	frame_length = MapU32(CurveLog32(rate), 480, 32);
 	get_frame.SetFrameLength(frame_length);
 	rate_old = rate;
-}
-
-/////////////////////
-/////////////////////
-//// Handle GATE ////
-/////////////////////
-/////////////////////
-
-if(inlet_gate) {
-	// RISING EDGE
-	if((!gate) || (firstrun)) {
-		// Only reset counter to get new frame if freeze not enabled
-		// TODO: fix so that first frame is captured if patch starts with freeze ON
-		get_frame.StartWord(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
-	};
-	gate = true;
-} else {
-	// FALLING EDGE
-	if(gate) {
-		// Stop playback on falling edge if in gated playback mode
-		if(!param_oneshot)
-			get_frame.StopReading();
-	};
-	gate = false;
 };
 
 /////////////////
@@ -251,6 +258,18 @@ if(param_loop || inlet_loop) {
 };
 
 ///////////////////
+// Handle FREEZE //
+///////////////////
+
+// Set freeze to false if this is first k-rate cycle
+// Allows first frame LPC to be captured, if patch starts with freeze on
+if(param_freeze || inlet_freeze) {
+	get_frame.SetFreeze((param_freeze || inlet_freeze));
+} else {
+	get_frame.SetFreeze(false);
+};
+
+///////////////////
 // Handle GLITCH //
 ///////////////////
 
@@ -260,28 +279,14 @@ if(param_glitch || inlet_glitch) {
 	get_frame.SetGlitch(false);
 };
 
-///////////////////
-// Handle FREEZE //
-///////////////////
-
-// Set freeze to false if this is first k-rate cycle
-// Allows first frame LPC to be captured, if patch starts with freeze on
-if(param_freeze || inlet_freeze) {
-	get_frame.SetFreeze(true);
-} else {
-	get_frame.SetFreeze(false);
-};
-
-
 /////////////////////////////
 // Handle rising-edge STEP //
 /////////////////////////////
 
 if(param_step || inlet_step) {
-	if(!step) {
+	if(!step)
 		get_frame.StepFrozenFrame();
-		step = true;
-	};
+	step = true;
 } else {
 	step = false;
 };
@@ -291,10 +296,9 @@ if(param_step || inlet_step) {
 /////////////////////////////////
 
 if(param_setjump || inlet_setjump) {
-	if(!setjump) {
+	if(!setjump)
 		get_frame.SetJumpPoint();
-		setjump = true;
-	};
+	setjump = true;
 } else {
 	setjump = false;
 };
@@ -304,13 +308,34 @@ if(param_setjump || inlet_setjump) {
 /////////////////////////////
 
 if(param_jump || inlet_jump) {
-	if(!jump) {
+	if(!jump)
 		get_frame.SetToJumpPoint();
-		jump = true;
-	};
+	jump = true;
 } else {
 	jump = false;
 };
+
+/////////////////////
+/////////////////////
+//// Handle GATE ////
+/////////////////////
+/////////////////////
+
+if((param_play || inlet_gate)) {
+	if(!gate && ((param_bend) || (inlet_bend))) {
+		bend_data = (struct BentData *)bend_position;
+		for(int i = 0; i < 8; i++) {
+			bend_spelling[i] = bend_data -> spelling[i] >> 1;
+		};
+		LogTextMessage("==== Talker Tools Reader message: ====");
+		LogTextMessage("Bent word: %s\n", bend_spelling);
+	};
+	gate = true;
+} else {
+	gate = false;
+};
+
+get_frame.SetGate((param_play || inlet_gate), param_oneshot);
 
 //////////////////////////////
 //////////////////////////////
@@ -335,14 +360,16 @@ outlet_tALKER[12] = lpc_indices.frame_trigger_;
 // Other multiplexed outlets
 
 // Gate
-gate_word = (param_oneshot) ? lpc_indices.is_reading_ : gate && lpc_indices.is_reading_;
+outlet_tALKER[13] = lpc_indices.is_reading_;
 
-outlet_tALKER[13] = gate_word;
+// Word-end
 outlet_tALKER[14] = lpc_indices.word_end_trigger_;
-outlet_tALKER[15] = 0;		// Connection-type (0:INDICES / >0:VALUES)
+
+// Connection-type (0:INDICES / >0:VALUES)
+outlet_tALKER[15] = 0;
 
 // Set gate outlet
-outlet_gate = gate_word;
+outlet_gate = lpc_indices.is_reading_;
 
 // Word-end outlet
 outlet_wordend = lpc_indices.word_end_trigger_;
@@ -353,6 +380,6 @@ outlet_wordend = lpc_indices.word_end_trigger_;
 
 firstrun = false;
 
-//]]></code.krate>
+// END K-RATE]]></code.krate>
    </obj.normal>
 </objdefs>
