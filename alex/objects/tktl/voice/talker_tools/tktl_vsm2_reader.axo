@@ -54,11 +54,24 @@ Part of the Talkie Tools object set.</sDescription>
          </combo>
       </attribs>
       <includes>
-         <include>./inc/file_io.h</include>
-         <include>./inc/lpc_stream.h</include>
          <include>./inc/toneburst-utility-functions.h</include>
+		 <include>./inc/lpc_stream.h</include>
+		 <include>./inc/file_io.h</include>
       </includes>
       <code.declaration><![CDATA[// START LOCAL DATA
+
+/*
+ * Reader for VSM2 LPC ROMs.
+ * Obsolete as VSM2 format updated
+ * 
+ * Adapted from MAME tms5220.cpp by Frank Palazzolo et. al
+ * https://github.com/mamedev/mame/blob/master/src/devices/sound/tms5220.cpp
+ * 
+ * With thanks.
+ * Your work is Amazing, guys!
+ * 
+ * toneburst/Team Talker 2018
+ */
 
 ///////////////////////
 // Object state vars //
@@ -118,7 +131,7 @@ uint32_t frame_length;
 // Functions //
 ///////////////
 
-// Check include-file ./inc/tfile_io.h
+// Check include-file ./inc/file_io.h
 // TktlDisplayWordMeta();
 
 /////////////

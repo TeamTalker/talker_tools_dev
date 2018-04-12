@@ -1,0 +1,124 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl source mixer" uuid="e2e6ba5d-3be4-43b7-b420-a6fe4492a77b">
+      <sDescription>Talker Excitation Source Mixer.
+Part of the Talker Tools object set.</sDescription>
+      <author>toneburst</author>
+      <license>BSD</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKEr" description="Talker Tools V-Bus connection (NOT AUDIO!)"/>
+         <frac32buffer name="VOICED" description="voiced wave"/>
+         <frac32buffer name="UNVOICED" description="unvoiced wave"/>
+         <bool32 name="unvoiced" description="switch between voiced and unvoiced waves"/>
+         <frac32.positive name="bias" description="mix unvoiced (noise) into voiced source"/>
+         <bool32 name="glide" description="apply glide to voiced/unvoiced mix"/>
+         <frac32.positive name="glideamt" description="glide rate (fast to slow)"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="EXCITATION" description="lpc excitation signal. Connect to tktl LPC Filter object excitation inlet (NOT AUDIO!)"/>
+         <frac32buffer.bipolar name="wave" description="axoloti-standard level wave (AUDIO)"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.tgl name="unvoiced" description="unvoiced switch"/>
+         <frac32.u.map name="bias" description="mix unvoiced (noise) into voiced source"/>
+         <bool32.tgl name="glide" description="apply slew to voiced/unvoiced mix"/>
+         <frac32.u.map name="glideamt" description="glide rate (fast to slow)"/>
+      </params>
+      <attribs/>
+      <includes>
+         <include>./inc/toneburst-utility-functions.h</include>
+      </includes>
+      <code.declaration><![CDATA[// START LOCAL DATA
+
+/*
+ * LPC Voiced/Unvoiced source mixer
+ * 
+ * toneburst/Team Talker 2018
+ */
+
+int32_t mix;
+int32_t mix_slew_state;
+
+int32_t current_energy;
+int32_t previous_energy;
+int32_t pitch;
+
+///////////////////////
+// Utility Functions //
+///////////////////////
+
+// Check include-file ./inc/toneburst-utility-functions.h
+
+// END LOCAL DATA]]></code.declaration>
+      <code.init><![CDATA[// START INIT
+
+LogTextMessage("\n/////////////////////////////////////////////////////////////////");
+LogTextMessage("// Initialising toneburst Talkie Synth Excitation Source Mixer //");
+LogTextMessage("/////////////////////////////////////////////////////////////////\n");
+
+mix = 0;
+mix_slew_state = 0;
+
+current_energy = 0;
+previous_energy = 0;
+pitch = 0;
+
+LogTextMessage("Done...");
+
+// END INIT]]></code.init>
+      <code.krate><![CDATA[// START K-RATE
+
+// Inlets are 27-bit, but EXCITATION outlet is shifted down to original levels.
+// wave outlet at standard Axoloti levels.
+
+// Grab values from multiplexed TALKEr inlet array
+current_energy = inlet_TALKEr[0];
+pitch  = inlet_TALKEr[1];
+
+// Set mix to max if unvoiced param or inlet set true, else set to values from bias param/inlet (saturated to 27 bits)
+// chirp and noise are 8 bits, so xfade mix can also be 8 bits
+mix = ((inlet_unvoiced) || (param_unvoiced) || (!pitch)) ? 128<<20 : CurveExp32(__USAT(param_bias + inlet_bias, 27));
+
+// Apply slew to mix value
+if(param_glide || inlet_glide)
+	mix = Slew32(mix, &mix_slew_state, __USAT(param_glideamt + inlet_glideamt, 27), true);
+
+// Shift mix value down to 8 bits
+mix >>= 19;
+
+// Loop through audio buffer
+for(uint8_t j = 0; j < BUFSIZE; j++){
+
+	// Mix voiced and unvoiced inlets
+	// Max value will be 8 x 8 bits (16 bits)
+	// Normally, we'd right-shift to bring it back into the right range, but..
+	// (see below)
+	int32_t a = (inlet_UNVOICED[j] >> 21) * mix;
+	a += (inlet_VOICED[j] >> 19) * (255 - mix);
+
+	// Multiply mixed voiced and unvoiced waves by frame energy
+	// Unscaled energy has max value of 114 or 86, depending on chirp table used (7 bits)
+	// MAME tms5110 code uses matrix_multiply function to multiply and scale excitation signal
+	// (same function used for calculating LPC lattice filter)
+	// Excitation is left-shifted by 6 before before being sent to the multiply function
+	// ..which then right-shifts the result 9 bits
+
+	// 'a' already has to be right-shifted by 8 after mixing, so we'll just subtract the 6 and right-shift by 2 instead,
+	// before multiplying with energy
+	a = (previous_energy * (a >> 2)) >> 9;
+
+	// EXCITATION outlet (original unscaled level)
+	// Down-shifted from 23 bits to 8
+	outlet_EXCITATION[j] = a;
+
+	// wave outlet caled to Axoloti-standard levels
+	outlet_wave[j] = a << 19;
+
+	// Update previous energy
+	previous_energy = current_energy;
+ };
+
+
+// END K-RATE]]></code.krate>
+   </obj.normal>
+</objdefs>

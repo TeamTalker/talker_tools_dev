@@ -1,0 +1,298 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl lpc filter" uuid="2b2d03be-8ed3-4479-9c36-eaa13b741a5d">
+      <sDescription>Talker Tools LPC filter.
+Part of the Talker Tools object set.</sDescription>
+      <author>Team Talker</author>
+      <license>BSD</license>
+      <inlets>
+         <frac32buffer.bipolar name="TALKEr" description="Talker Tools V-Bus connection (NOT AUDIO!)"/>
+         <frac32buffer.bipolar name="EXCITATION" description="input from voiced/unvoiced source mixer"/>
+         <bool32.risingfalling name="glide" description="apply glide to filter bands"/>
+         <bool32 name="glideamt" description="glide rate (fast to slow)"/>
+         <frac32 name="srate" description="srate"/>
+         <frac32.bipolar name="formant" description="formant-shift"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="wave" description="axoloti-standard level voice output"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.tgl name="glide" description="glide on/off"/>
+         <frac32.u.map name="glideamt" description="glide rate (fast to slow)"/>
+         <frac32.s.map name="formant" description="formant-shift"/>
+         <bool32.tgl name="interp"/>
+      </params>
+      <attribs/>
+      <includes>
+         <include>./inc/file_io.h</include>
+         <include>./inc/toneburst-utility-functions.h</include>
+      </includes>
+      <code.declaration><![CDATA[// START LOCAL DATA
+
+/*
+ * Reader for VSM2 LPC ROMs.
+ * Obsolete as VSM2 format updated
+ * 
+ * Adapted from MAME tms5220.cpp by Frank Palazzolo et. al
+ * https://github.com/mamedev/mame/blob/master/src/devices/sound/tms5220.cpp
+ * 
+ * With thanks.
+ * Your work is Amazing, guys!
+ * 
+ * toneburst/Team Talker 2018
+ */
+
+// Glide rate/state
+uint32_t glide_rate;
+int32_t k_glide_state[10];
+
+int32_t formant;
+int32_t formant_old;
+
+//float clock_phase;
+uint32_t clock_phase;
+//float sample_rate;
+uint32_t sample_rate;
+uint8_t sample_rate_index;
+
+// 27-bit sample-rate lookup table
+// +- 1 octave, centered on 8kHz (0.16667 of 48kHz S-Rate)
+const uint16_t rate_table_int[25] = {
+	5461,
+	5786,
+	6130,
+	6495,
+	6881,
+	7290,
+	7723,
+	8183,
+	8669,
+	9185,
+	9731,
+	10310,
+	10923,
+	11572,
+	12260,
+	12989,
+	13762,
+	14580,
+	15447,
+	16366,
+	17339,
+	18370,
+	19462,
+	20619,
+	21845
+};
+
+// Current/next samples
+int32_t current_sample_;
+int32_t next_sample_;
+
+// LPC state
+int32_t m_current_k[10];
+int32_t m_u[11];
+int32_t m_x[10];
+
+// Excitation signal value
+int32_t excitation = 0;
+
+//////////////////////////
+// LPC filter functions //
+//////////////////////////
+
+// Copied more-or-less verbatim (including comments)
+// https://github.com/mamedev/mame/blob/master/src/devices/sound/tms5110.cpp
+// Massive thank-you to the authors, particularly Lord Nightmare, who has also been kind enough
+// to patiently answer my Stupid Questions on Twitter
+
+/**********************************************************************************************
+	matrix_multiply -- does the proper multiply and shift
+     a is the k coefficient and is clamped to 10 bits (9 bits plus a sign)
+     b is the running result and is clamped to 14 bits.
+     output is 14 bits, but note the result LSB bit is always 1.
+     Because the low 4 bits of the result are trimmed off before
+     output, this makes almost no difference in the computation.
+**********************************************************************************************/
+
+static int32_t lpc_matrix_multiply(int32_t a, int32_t b) {
+	int32_t result;
+	while (a > 511) { a -= 1024; }
+	while (a < -512) { a += 1024; }
+	while (b > 16383) { b -= 32768; }
+	while (b < -16384) { b += 32768; }
+	result = ((a * b) >> 9); /** TODO: this isn't technically right to the chip, which truncates the lowest result bit, but it causes glitches otherwise. **/
+	return result;
+}
+
+/**********************************************************************************************
+     lattice_filter -- executes one 'full run' of the lattice filter on a specific byte of
+     excitation data, and specific values of all the current k constants,  and returns the
+     resulting sample.
+***********************************************************************************************/
+
+int32_t lpc_lattice_filter(int32_t excitation) {
+	// Lattice filter here
+	// Aug/05/07: redone as unrolled loop, for clarity - LN
+	/* Originally Copied verbatim from table I in US patent 4,209,804, now updated to be in same order as the actual chip does it, not that it matters.
+	  notation equivalencies from table:
+	  Yn(i) == m_u[n-1]
+	  Kn = m_current_k[n-1]
+	  bn = m_x[n-1]
+	*/
+	
+	m_u[10] = excitation;
+	m_u[9]  = m_u[10] - lpc_matrix_multiply(m_current_k[9], m_x[9]);
+	m_u[8]  = m_u[9]  - lpc_matrix_multiply(m_current_k[8], m_x[8]);
+	m_u[7]  = m_u[8]  - lpc_matrix_multiply(m_current_k[7], m_x[7]);
+	m_u[6]  = m_u[7]  - lpc_matrix_multiply(m_current_k[6], m_x[6]);
+	m_u[5]  = m_u[6]  - lpc_matrix_multiply(m_current_k[5], m_x[5]);
+	m_u[4]  = m_u[5]  - lpc_matrix_multiply(m_current_k[4], m_x[4]);
+	m_u[3]  = m_u[4]  - lpc_matrix_multiply(m_current_k[3], m_x[3]);
+	m_u[2]  = m_u[3]  - lpc_matrix_multiply(m_current_k[2], m_x[2]);
+	m_u[1]  = m_u[2]  - lpc_matrix_multiply(m_current_k[1], m_x[1]);
+	m_u[0]  = m_u[1]  - lpc_matrix_multiply(m_current_k[0], m_x[0]);
+
+	m_x[9] = m_x[8]  + lpc_matrix_multiply(m_current_k[8], m_u[8]);
+	m_x[8] = m_x[7]  + lpc_matrix_multiply(m_current_k[7], m_u[7]);
+	m_x[7] = m_x[6]  + lpc_matrix_multiply(m_current_k[6], m_u[6]);
+	m_x[6] = m_x[5]  + lpc_matrix_multiply(m_current_k[5], m_u[5]);
+	m_x[5] = m_x[4]  + lpc_matrix_multiply(m_current_k[4], m_u[4]);
+	m_x[4] = m_x[3]  + lpc_matrix_multiply(m_current_k[3], m_u[3]);
+	m_x[3] = m_x[2]  + lpc_matrix_multiply(m_current_k[2], m_u[2]);
+	m_x[2] = m_x[1]  + lpc_matrix_multiply(m_current_k[1], m_u[1]);
+	m_x[1] = m_x[0]  + lpc_matrix_multiply(m_current_k[0], m_u[0]);
+	m_x[0] = m_u[0];
+
+	// Return final results
+	return __SSAT(m_u[0] << 2, 16);
+};
+
+///////////////
+// Functions //
+///////////////
+
+/*int32_t Xfade16(int16_t a, int16_t b, uint32_t x) {
+	int32_t ccompl = (1 << 15) - x;
+	int32_t result = (int32_t)b * x;
+	result += (int32_t)a * ccompl;
+	return result >> 16;
+};*/
+
+/*
+ScaleU32()
+MapU32()
+Slew32()
+
+functions moved to include file at
+/inc/toneburst-utility-functions.h
+
+Pitch-offset written to shared object defined in
+/inc/file_io.h
+*/
+
+// END LOCAL DATA]]></code.declaration>
+      <code.init><![CDATA[// START INIT
+
+LogTextMessage("\n//////////////////////////////////////////");
+LogTextMessage("// Initialising Talker Tools LPC Filter //");
+LogTextMessage("//////////////////////////////////////////\n");
+
+///////////////
+// Init vars //
+///////////////
+
+// Sample-rate vars
+clock_phase       = 0;
+sample_rate       = 10923;//0.16667f;
+sample_rate_index = 12;
+
+// Formant setting vars
+formant           = 0;
+formant_old       = 0;
+
+// LPC state
+m_current_k[10]   = {0};
+m_u[11]           = {0};
+m_x[10]           = {0};
+
+// Glide rate/state-store
+glide_rate        = 0;
+k_glide_state[10] = {0};
+
+// Excitation signal value
+excitation        = 0;
+
+// Sample output current/previous
+current_sample_   = 0;
+next_sample_      = 0;
+
+LogTextMessage("Done...");
+
+// END INIT]]></code.init>
+      <code.krate><![CDATA[// START K-RATE
+
+//////////////////////
+// Process Controls //
+//////////////////////
+
+
+//outlet_o= (inlet_i>>1)+(1<<26);
+// Glide-rate
+glide_rate = (param_glide || inlet_glide) ? __USAT(param_glideamt + inlet_glideamt, 27) : 0;
+
+// Formant value
+formant = (__SSAT(param_formant + inlet_formant, 27) >> 1) + (1 << 26);
+
+
+if(formant != formant_old) {
+	sample_rate_index  = ScaleU32(formant, 24);
+
+	// Write sample-rate table index value to shared object so Voiced Source can read it
+	// to extract offset value from it's own pitch-offset lookup table
+	TktlShared::filter_pitch_offset_ = sample_rate_index;
+	
+	sample_rate = rate_table_int[sample_rate_index];
+};
+formant_old = formant;
+
+///////////////////////
+// Grab inlet values //
+///////////////////////
+
+// Get current frame K values
+for(int i = 0; i < 10; i++) {
+	m_current_k[i] = Slew32(inlet_TALKEr[i + 2]  << 16, &k_glide_state[i], glide_rate, true) >> 16;
+};
+
+////////////////////////////////
+// Loop through sample buffer //
+////////////////////////////////
+
+// Big thanks to Olivier Gillet of Mutable Instruments for variable sample-rate method
+// https://forum.mutable-instruments.net/t/lpc-playback-formant-shifting/13481/35
+	
+for(uint8_t j = 0; j < BUFSIZE; j++) {
+	// Grab excitation signal
+	excitation = inlet_EXCITATION[j];
+
+	// Increment clock-phase
+	clock_phase += sample_rate;
+
+	// Variable sample-rate mechanism
+	if (clock_phase >= 65536) {
+		clock_phase -= 65536;
+		current_sample_ = next_sample_;
+		next_sample_ = lpc_lattice_filter(excitation);
+	};
+
+	// Voice output sample (with linear interpolation)
+	if(param_interp)
+		outlet_wave[j] = Xfade16(current_sample_, next_sample_, clock_phase) << 13;
+	else
+		outlet_wave[j] = next_sample_ << 13;
+};
+
+// END K-RATE]]></code.krate>
+   </obj.normal>
+</objdefs>

@@ -227,8 +227,7 @@ TktlLpcIndices TktlGetLPCFrame::Tick() {
 		} else {
 			lpc_indices_.is_reading_ = false;
 		};
-	};	
-	
+	};		
 	// Update counter (if freeze true, counter will keep incrementing forever)
 	counter_ = (counter_ < frame_length_) ? counter_ + 1 : 0;
 	// Bit-shift pitch indices up by one, if there are only 5 bits for pitch

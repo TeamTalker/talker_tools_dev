@@ -1,0 +1,386 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl vsm2 reader fixed-frame" uuid="5b7b2cac-7bb5-48da-a563-82cb6c1da0b8">
+      <author>Team Talker</author>
+      <license>BSD</license>
+      <inlets>
+         <bool32.risingfalling name="gate"/>
+         <int32.positive name="word"/>
+         <frac32.positive name="position"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.positive name="tALKER"/>
+         <frac32.positive name="random" description="random number"/>
+      </outlets>
+      <displays/>
+      <params>
+         <int32 name="word">
+            <MinValue i="0"/>
+            <MaxValue i="1023"/>
+         </int32>
+         <frac32.u.map name="position"/>
+         <int32.hradio name="playmode">
+            <MaxValue i="3"/>
+         </int32.hradio>
+         <bool32.mom name="debug"/>
+      </params>
+      <attribs>
+         <combo name="debug">
+            <MenuEntries>
+               <string>off</string>
+               <string>on</string>
+            </MenuEntries>
+            <CEntries>
+               <string>0</string>
+               <string>1</string>
+            </CEntries>
+         </combo>
+      </attribs>
+      <includes>
+         <include>./inc/file_io.h</include>
+         <include>./inc/toneburst-utility-functions.h</include>
+         <include>./inc/lpc_stream.h</include>
+      </includes>
+      <code.declaration><![CDATA[// START LOCAL DATA
+
+bool disable;
+bool firstrun;
+
+///////////////
+// Word vars //
+///////////////
+
+// Pointer to frame in SDRAM
+uint64_t *ptr_word_start_sdram;
+uint64_t *ptr_frame_sdram;
+
+uint16_t word_count;
+uint32_t word_index;
+uint32_t word_index_old;
+
+// Playhead position
+uint32_t position;
+uint32_t position_old;
+uint32_t scrub_position;
+uint32_t scrub_position_old;
+
+// Counters
+uint32_t cycle_counter;
+uint32_t frame_counter;
+
+/////////////
+// Structs //
+/////////////
+
+// Structs defined in ./inc/file_io.h
+struct TktlVSM2FFWordMeta *ptr_vsm2_word_meta_start;
+struct TktlVSM2FFWordMeta *ptr_vsm2_word_meta;
+uint32_t vsm2_rom_size;
+
+//////////////////
+// Control vars //
+//////////////////
+
+// Flags
+bool      gate;
+bool      play;
+bool      loop;
+int8_t    direction;
+//bool      bend;
+//bool      glitch;
+//bool      freeze;
+//bool      step;
+//bool      setjump;
+//bool      jump;*/
+bool      debug;
+
+// Frame data struct
+struct LPCFixedFrame {
+    uint8_t  energy;
+    uint8_t  pitch;
+    uint8_t  k0;
+    uint8_t  k1;
+    uint8_t  k2;
+    uint8_t  k3;
+    uint8_t  k4;
+    uint8_t  k5;
+    uint8_t  k6;
+    uint8_t  k7;
+    uint8_t  k8;
+    uint8_t  k9;
+    bool     unvoiced;
+    bool     rest;
+    bool     repeat;
+    bool     end;
+    uint16_t random;
+} frame_data;
+
+
+// Parse fame data into individual vars
+void ParseFrameData(uint64_t data_in) {
+	frame_data.energy   =  data_in >> 60;
+	frame_data.pitch    = (data_in >> 54) & 0b111111;
+	frame_data.k0       = (data_in >> 49) & 0b11111;
+	frame_data.k1       = (data_in >> 44) & 0b11111;
+	frame_data.k2       = (data_in >> 40) & 0b1111;
+	frame_data.k3       = (data_in >> 36) & 0b1111;
+	frame_data.k4       = (data_in >> 32) & 0b1111;
+	frame_data.k5       = (data_in >> 28) & 0b1111;
+	frame_data.k6       = (data_in >> 24) & 0b1111;
+	frame_data.k7       = (data_in >> 21) & 0b111;
+	frame_data.k8       = (data_in >> 18) & 0b111;
+	frame_data.k9       = (data_in >> 15) & 0b111;
+	frame_data.unvoiced = (data_in >> 14) & 0b1;
+	frame_data.rest     = (data_in >> 13) & 0b1;
+	frame_data.repeat   = (data_in >> 12) & 0b1;
+	frame_data.end      = (data_in >> 11) & 0b1;
+	frame_data.random   =  data_in        & 0b11111111111;
+};
+
+void LogFrameData() {
+	LogTextMessage("word: %s", ptr_vsm2_word_meta -> spelling);
+	LogTextMessage("frame: %d", scrub_position);
+	LogTextMessage("energy: %d", frame_data.energy);
+	LogTextMessage("pitch: %d", frame_data.pitch);
+	LogTextMessage("k0: %d", frame_data.k0);
+	LogTextMessage("k1: %d", frame_data.k1);
+	LogTextMessage("k2: %d", frame_data.k2);
+	LogTextMessage("k3: %d", frame_data.k3);
+	LogTextMessage("k4: %d", frame_data.k4);
+	LogTextMessage("k5: %d", frame_data.k5);
+	LogTextMessage("k6: %d", frame_data.k6);
+	LogTextMessage("k7: %d", frame_data.k7);
+	LogTextMessage("k8: %d", frame_data.k8);
+	LogTextMessage("k9: %d", frame_data.k9);
+	LogTextMessage("unvoiced: %d", frame_data.unvoiced);
+	LogTextMessage("rest: %d", frame_data.rest);
+	LogTextMessage("repeat: %d", frame_data.repeat);
+	LogTextMessage("end: %d", frame_data.end);
+	LogTextMessage("random: %d\n", frame_data.random);
+};
+
+// END LOCAL DATA]]></code.declaration>
+      <code.init><![CDATA[// START INIT
+
+LogTextMessage("\n////////////////////////////////////////////////////////");
+LogTextMessage("// Initialising Talkie Tools ROM Reader (Fixed-Frame) //");
+LogTextMessage("////////////////////////////////////////////////////////\n");
+
+////////////////////
+// Error-checking //
+////////////////////
+
+disable = false;
+firstrun = true;
+
+if(TktlShared::vsm2_word_count_ == 0) {
+	LogTextMessage("ERROR: VSM2 ROM file not loaded, exiting");
+	disable = true;
+	return;
+} else {
+	LogTextMessage("Done...");
+};
+
+// Pointer to frame in SDRAM
+ptr_word_start_sdram = NULL;
+ptr_frame_sdram      = NULL;
+
+//////////////////////
+//Setup object vars //
+//////////////////////
+
+gate                     = false;
+play                     = false;
+loop                     = false;
+direction                = 1;
+//bend                     = false;
+//glitch                   = false;
+//freeze                   = false;
+//step                     = false;
+//setjump                  = false;
+//jump                     = false;
+debug                    = false;
+
+word_count               = TktlShared::vsm2_word_count_;
+word_index               = 0;
+word_index_old           = 1023;
+
+position                 = 0;
+scrub_position           = 0;
+scrub_position_old       = 0;
+
+cycle_counter            = 0;
+frame_counter            = 0;
+
+ptr_vsm2_word_meta_start = TktlShared::ptr_vsm2ff_word_meta_sdram_;
+ptr_vsm2_word_meta       = ptr_vsm2_word_meta_start;
+
+vsm2_rom_size            = TktlShared::vsm2_rom_size_;
+
+frame_data               = {0};
+
+///////////////////////
+// Display Word Meta //
+///////////////////////
+
+TktlDisplayWordMetaFF(attr_debug, word_index, ptr_vsm2_word_meta);
+
+LogTextMessage("Done...");
+
+// END INIT]]></code.init>
+      <code.krate><![CDATA[// Start K-RATE
+
+// Reset frame-increment trigger (to Tables)
+outlet_tALKER[12] = 0;
+
+//////////
+// Gate //
+//////////
+
+
+if(inlet_gate) {
+	if(!gate) {
+		cycle_counter = 0;
+		frame_counter = 0;
+		play = true;
+	};
+} else {
+	play = false;
+};
+
+gate = inlet_gate;
+
+///////////////////////////
+// Handle word-selection //
+///////////////////////////
+
+word_index = Max16(param_word, (word_count -1) + inlet_word);
+
+if(word_index != word_index_old) {
+	
+	ptr_vsm2_word_meta = ptr_vsm2_word_meta_start + word_index;
+	TktlDisplayWordMetaFF(attr_debug, word_index, ptr_vsm2_word_meta);
+
+	// Set pointer to word-start
+	ptr_word_start_sdram = (uint64_t *)(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
+	
+	// Set frame pointer to word start
+	ptr_frame_sdram = ptr_word_start_sdram ;
+	
+	word_index_old = word_index;
+
+	cycle_counter = 0;
+	frame_counter = 0;
+
+	// Parse new word first frame
+	//ParseFrameData(*ptr_frame_sdram, &frame_data);
+
+	// Send new frame-increment trigger to Tables
+	outlet_tALKER[12] = 1;
+};
+
+//////////////////
+// Handle scrub //
+//////////////////
+
+// Calculate new scrub-position
+scrub_position = ScaleU32(__USAT(param_position + inlet_position, 27), ptr_vsm2_word_meta->length);
+
+if(scrub_position != scrub_position_old) {
+	
+	// Increment pointer to new position
+	//ptr_frame_sdram += scrub_position;
+};
+
+
+if((cycle_counter == 0) && (play)) {
+
+	if((frame_counter > 0) && (frame_counter < ptr_vsm2_word_meta->length)) {
+	
+		// Parse new frame
+		ParseFrameData(*(ptr_word_start_sdram + frame_counter));
+			
+		// Increment frame-counter
+		if(direction == 1)
+			frame_counter++;
+		else if(direction == -1)
+			frame_counter--;
+		
+		// Send new frame-increment trigger to Tables
+		outlet_tALKER[12] = 1;
+	
+	// We're on the first frame
+	} else if (frame_counter == 0) {				
+		// Parse first frame
+		ParseFrameData(*(ptr_word_start_sdram + frame_counter));
+		// Direction will always be forwards, if we're on the 1st frame
+		direction = 1;
+		// Increment frame-counter
+		frame_counter++;
+		
+	// We're at last frame
+	} else if(frame_counter == ptr_vsm2_word_meta->length) {
+			
+		// Loop mode
+		if(param_playmode == 1) {
+			// Parse last frame
+			//ParseFrameData(*(ptr_word_start_sdram + frame_counter));
+			// Reset frame counter to word start
+			frame_counter = 0;
+			// Direction will be forwards
+			direction = 1;
+		
+		// Pingpong mode
+		} else if(param_playmode == 2) {
+			// Reverse direction
+			direction = -1;
+			// Reverse to previous frame
+			frame_counter--;
+		};
+	};
+
+	if(frame_data.end)
+		LogTextMessage("END!");
+};
+
+cycle_counter = (cycle_counter < 75) ? cycle_counter + 1 : 0;
+
+// Update previous position
+scrub_position_old = scrub_position;
+
+//////////////////////////////
+// Handle Debug Rising Edge //
+//////////////////////////////
+
+if(param_debug) {
+	// Rising Edge
+	if(!debug) {
+		LogFrameData();
+	};
+};
+debug = param_debug;
+
+
+/////////////////
+// Set outlets //
+/////////////////
+
+// Multiplexed LPC indices 
+outlet_tALKER[0]  = frame_data.energy;
+outlet_tALKER[1]  = frame_data.pitch;
+outlet_tALKER[2]  = frame_data.k0;
+outlet_tALKER[3]  = frame_data.k1;
+outlet_tALKER[4]  = frame_data.k2;
+outlet_tALKER[5]  = frame_data.k3;
+outlet_tALKER[6]  = frame_data.k4;
+outlet_tALKER[7]  = frame_data.k5;
+outlet_tALKER[8]  = frame_data.k6;
+outlet_tALKER[9]  = frame_data.k7;
+outlet_tALKER[10] = frame_data.k8;
+outlet_tALKER[11] = frame_data.k9;
+
+// Per-frame 11-bit random number
+outlet_random     = frame_data.random << 16;
+
+// END K-RATE]]></code.krate>
+   </obj.normal>
+</objdefs>
