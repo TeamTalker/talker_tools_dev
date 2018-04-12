@@ -1,0 +1,316 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl voiced source" uuid="20c25aa2-a8ac-4f32-9707-5c28c40fcd00">
+      <sDescription>Talker Voiced Source oscillator.
+Part of the Talker Tools object set.</sDescription>
+      <author>Team Talker</author>
+      <license>BSD</license>
+      <helpPatch>osc.axh</helpPatch>
+      <inlets>
+         <frac32buffer.positive name="TALKEr" description="Talker Tools V-Bus connection (NOT AUDIO!)"/>
+         <frac32.bipolar name="note" description="axoloti standard pitch"/>
+         <bool32 name="glide" description="glide on/off"/>
+         <frac32.positive name="glideamt" description="glide amount"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="VOICED" description="lpc voiced source. Connect to tktl source mixer object."/>
+      </outlets>
+      <displays/>
+      <params>
+         <frac32.s.map.pitch name="pitch" description="pitch sweep"/>
+         <int32 name="wave" description="wave-select (0 = auto)">
+            <MinValue i="0"/>
+            <MaxValue i="4"/>
+         </int32>
+         <int32.hradio name="pmode" description="pitch mode (LPC pitch | LPC + Note | Note)">
+            <MaxValue i="3"/>
+         </int32.hradio>
+         <bool32.tgl name="glide" description="glide on/off"/>
+         <frac32.u.map name="glideamt" description="glide amount"/>
+      </params>
+      <attribs>
+         <combo name="debug" description="display table info to console">
+            <MenuEntries>
+               <string>off</string>
+               <string>on</string>
+            </MenuEntries>
+            <CEntries>
+               <string>0</string>
+               <string>1</string>
+            </CEntries>
+         </combo>
+      </attribs>
+      <file-depends>
+         <file-depend localFilename="./data/lpc_chirp_tables.raw" targetPath="/shared/tktl/talker_tools/lpc_chirp_tables.raw"/>
+         <file-depend localFilename="./data/lpc_chirp_pitch.raw" targetPath="/shared/tktl/talker_tools/lpc_chirp_pitch.raw"/>
+      </file-depends>
+      <includes>
+         <include>./inc/file_io.h</include>
+         <include>./inc/toneburst-utility-functions.h</include>
+      </includes>
+      <code.declaration><![CDATA[// START LOCAL DATA
+
+/*
+ * LPC voiced source oscillator.
+ * Adapted from MAME tms5220.cpp by Frank Palazzolo et. al
+ * https://github.com/mamedev/mame/blob/master/src/devices/sound/tms5220.cpp
+ * 
+ * With thanks.
+ * Your work is Amazing, guys!
+ * 
+ * toneburst/Team Talker 2018
+ */
+ 
+/////////////////
+// Object vars //
+/////////////////
+
+// State vars
+bool disable;
+bool multiple_instance;
+uint8_t load_status;
+uint8_t tables;
+
+////////////////
+// Pitch vars //
+////////////////
+
+int32_t  pitch;
+int32_t  *pitch_slewstate;
+uint32_t phase_increment;
+int32_t  phase_accumulator;
+int32_t  phase_accumulator_old;
+uint32_t table_counter;
+int32_t  glide;
+
+// Pitch-offset lookup table to compensate for formant-shifting applied in the filter object
+const int32_t pitch_offset_table[25] = {
+	25165824,
+	23068672,
+	20971520,
+	18874368,
+	16777216,
+	14680064,
+	12582912,
+	10485760,
+	8388608,
+	6291456,
+	4194304,
+	2097152,
+	0,
+	-2097152,
+	-4194304,
+	-6291456,
+	-8388608,
+	-10485760,
+	-12582912,
+	-14680064,
+	-16777216,
+	-18874368,
+	-20971520,
+	-23068672,
+	-25165824
+};
+
+// CHIRP table index
+uint8_t wave_index;
+
+////////////////////////
+// STRUCT DEFINITIONS //
+////////////////////////
+
+// Struct pointer to hold data from LPC CHIRP tables binary file copied to SDRAM
+struct ChirpTables {
+    char    name[16];
+    int8_t chirp_table[312];
+} *ptr_lpc_chirp_tables_sdram_start, *ptr_lpc_chirp_tables_sdram;
+
+// Struct pointer to hold LPC pitch table array
+struct LPCPitch {
+	int32_t table[160];
+} *ptr_chirp_pitch_table_sdram;
+
+///////////////
+// Functions //
+///////////////
+
+void DisplayChirpData(ChirpTables *chirp, uint8_t verbose) {
+	if(verbose > 0) {
+		LogTextMessage("==== Message from Talker Tools Voiced Source ====");
+		LogTextMessage("Selected CHIRP table: %s", chirp -> name);
+	};
+};
+
+// END LOCAL DATA]]></code.declaration>
+      <code.init><![CDATA[// START INIT
+
+LogTextMessage("\n/////////////////////////////////////////////");
+LogTextMessage("// Initialising Talkie Tools Voiced Source //");
+LogTextMessage("/////////////////////////////////////////////\n");
+
+if(attr_debug)
+	LogTextMessage("Extended information display on\n");
+
+load_status           = 1;
+tables                = 7;
+
+///////////////
+// Init vars //
+///////////////
+
+// State vars
+disable               = false;
+multiple_instance     = false;
+load_status           = 1;
+
+// Pitch vars
+pitch                 = 0;
+pitch_slewstate       = 0;
+phase_increment       = 0;
+phase_accumulator     = 0;
+phase_accumulator_old = 0;
+table_counter         = 0;
+glide                 = 0;
+
+wave_index            = 0;
+
+////////////////////////////////////////////
+// Attempts to load CHIRP data into sdram //
+////////////////////////////////////////////
+
+// Check if file already copied to SDRAM
+// (pointer set in TktlShared class)
+if(!TktlShared::ptr_lpc_chirp_tables_sdram_) {
+
+	// Run file-loader (in incl. file) and save return-status
+	// Pointer to SDRAM data passed by reference
+	load_status = TktlLoadFileSDRAM("/shared/tktl/talker_tools/lpc_chirp_tables.raw", TktlShared::ptr_lpc_chirp_tables_sdram_, attr_debug);
+
+	// Check return of file-loader function
+	if(load_status != 0) {
+		LogTextMessage("ERROR: File-loader failed to load CHIRP data file to SDRAM, exiting");
+		return;
+	};
+} else {
+	LogTextMessage("Reusing data loaded by the first instance of this object.");
+	multiple_instance = true;
+};
+
+////////////////////////////////
+// Setup CHIRP table pointers //
+////////////////////////////////
+
+// Cast pointer to struct type, and make copy so we
+// can increment pointer location for alternative tables
+ptr_lpc_chirp_tables_sdram_start = (struct ChirpTables *)TktlShared::ptr_lpc_chirp_tables_sdram_;
+ptr_lpc_chirp_tables_sdram = ptr_lpc_chirp_tables_sdram_start;
+
+///////////////////////////////////////////////////////
+// Attempt to load LPC coefficient tables into sdram //
+///////////////////////////////////////////////////////
+
+// Check if file already copied to SDRAM
+// (pointer set in TktlShared class)
+if(!TktlShared::ptr_chirp_pitch_table_sdram_) {
+
+	// Run file-loader (in incl. file) and save return-status
+	// Pointer to SDRAM data passed by reference
+	load_status = TktlLoadFileSDRAM("/shared/tktl/talker_tools/lpc_chirp_pitch.raw", TktlShared::ptr_chirp_pitch_table_sdram_, attr_debug);
+
+	// Check return of file-loader function
+	if(load_status != 0) {
+		LogTextMessage("ERROR: File-loader failed to load CHIRP pitch file to SDRAM, exiting");
+		return;
+	};
+} else {
+	LogTextMessage("Reusing data loaded by the first instance of this object.");
+	multiple_instance = true;
+};
+
+ptr_chirp_pitch_table_sdram = (struct LPCPitch *)TktlShared::ptr_chirp_pitch_table_sdram_;
+
+LogTextMessage("Done...");
+
+// END INIT]]></code.init>
+      <code.krate><![CDATA[// START K-RATE
+
+////////////////////////
+// Handle change WAVE //
+////////////////////////
+
+if(param_wave == 0) {
+	ptr_lpc_chirp_tables_sdram = ptr_lpc_chirp_tables_sdram_start + TktlShared::rom_chirp_id_;
+} else if (wave_index != param_wave) {
+	ptr_lpc_chirp_tables_sdram = ptr_lpc_chirp_tables_sdram_start + (param_wave - 1);
+	DisplayChirpData(ptr_lpc_chirp_tables_sdram, attr_debug);	 
+	wave_index = param_wave;
+};
+
+///////////////////////
+// Handle mode PITCH //
+///////////////////////
+
+switch(param_pmode) {
+	case 0 :
+		// MODE 0: LPC pitch
+		pitch = ptr_chirp_pitch_table_sdram->table[inlet_TALKEr[1]];
+		break;
+	case 1 :
+		// MODE 1: Mix LPC pitch and Note
+		pitch = ptr_chirp_pitch_table_sdram->table[inlet_TALKEr[1]] + (inlet_note + 8388608);
+		break;
+	case 2 :
+		// MODE 2: Note only
+		//pitch = inlet_note - 50331648; // 2 oct down
+		pitch = inlet_note - 25165824; // 1 oct down
+		break;
+	
+};
+
+//////////////////
+// Handle GLIDE //
+//////////////////
+
+// Set glide amount
+glide = (param_glide || inlet_glide) ? __USAT(param_glideamt + inlet_glideamt, 27) : 0;
+
+// Slew function in includefile ./inc/toneburst-utility-functions.h
+pitch = Slew32(pitch, pitch_slewstate, glide, param_glide);
+
+// Apply offset set by filter 
+pitch += pitch_offset_table[TktlShared::filter_pitch_offset_];
+
+/////////////////////////
+// Set phase-increment //
+/////////////////////////
+
+uint32_t phase_increment;
+MTOFEXTENDED(pitch + param_pitch, phase_increment);
+
+////////////////////////////////
+// Loop through outlet buffer //
+////////////////////////////////
+
+int j;
+for(j = 0; j < BUFSIZE; j++) {
+
+	// Increment phase-accumulator
+	phase_accumulator += phase_increment;
+
+	// Reset table counter if accumulator has rolled over
+	if(phase_accumulator_old > phase_accumulator) {		
+		table_counter = 0;		
+	};
+
+	// Set talker Voiced Source outlet (original level)
+	outlet_VOICED[j] = ptr_lpc_chirp_tables_sdram -> chirp_table[table_counter] << 19;
+
+	// Update table counter (ensuring doesn't run off table end)
+	table_counter = (table_counter < 311) ? table_counter + 1 : 311;
+
+	// Update old accumulator
+	phase_accumulator_old = phase_accumulator;
+};
+
+// END K-RATE]]></code.krate>
+   </obj.normal>
+</objdefs>

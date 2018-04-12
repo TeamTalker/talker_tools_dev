@@ -44,6 +44,16 @@ struct TktlVSM2WordMeta {
     uint32_t lpc_entry_point;
 };
 
+struct TktlVSM2FFWordMeta {
+    uint32_t length;
+    char spelling[16];
+    uint32_t lpc_entry_point;
+};
+
+struct TktlBentWord {
+	char spelling[16];
+};
+
 ///////////////////
 ///////////////////
 //// Functions ////
@@ -97,6 +107,7 @@ class TktlShared {
 		static uint8_t  *ptr_vsm2_sdram_;
 		static struct   TktlVSM2ROMHeader *ptr_vsm2_rom_header_;
 		static struct   TktlVSM2WordMeta *ptr_vsm2_word_meta_sdram_;
+		static struct   TktlVSM2FFWordMeta *ptr_vsm2ff_word_meta_sdram_;
 		static uint16_t	vsm2_word_count_;
 		static uint8_t  *ptr_lpc_coef_tables_sdram_;
 		static uint8_t  *ptr_lpc_chirp_tables_sdram_;
@@ -106,6 +117,8 @@ class TktlShared {
 		static uint8_t  rom_pitch_bits_;
 		static uint32_t	vsm2_rom_size_;
 		static uint8_t  vsm2_preset_index_;
+		static uint32_t rom_bend_increment_;
+		static uint8_t  filter_pitch_offset_;
 };
 
 /////////////////////////////////////

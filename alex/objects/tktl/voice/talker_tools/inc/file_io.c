@@ -7,17 +7,20 @@
 //bool TktlShared::inited = false;
 uint8_t  *TktlShared::ptr_vsm_sdram_ = NULL;
 uint8_t  *TktlShared::ptr_vsm2_sdram_ = NULL;
-struct   TktlVSM2ROMHeader* TktlShared::ptr_vsm2_rom_header_ = NULL;
-struct   TktlVSM2WordMeta* TktlShared::ptr_vsm2_word_meta_sdram_ = NULL;
+struct   TktlVSM2ROMHeader *TktlShared::ptr_vsm2_rom_header_ = NULL;
+struct   TktlVSM2WordMeta *TktlShared::ptr_vsm2_word_meta_sdram_ = NULL;
+struct   TktlVSM2FFWordMeta *TktlShared::ptr_vsm2ff_word_meta_sdram_;
 uint16_t TktlShared::vsm2_word_count_ = 0;
 uint8_t  *TktlShared::ptr_lpc_coef_tables_sdram_ = NULL;
 uint8_t  *TktlShared::ptr_lpc_chirp_tables_sdram_ = NULL;
 uint8_t  *TktlShared::ptr_chirp_pitch_table_sdram_ = NULL;
 uint8_t  TktlShared::vsm2_lpc_tables_id_ = 7;
-uint8_t  TktlShared::rom_chirp_id_ = 0;
+uint8_t  TktlShared::rom_chirp_id_ = 7;
 uint8_t  TktlShared::rom_pitch_bits_ = 0;
 uint32_t TktlShared::vsm2_rom_size_ = 0;
+uint32_t TktlShared::rom_bend_increment_ = 0;
 uint8_t  TktlShared::vsm2_preset_index_ = 0;
+uint8_t  TktlShared::filter_pitch_offset_ = 12; // Init to center value in table
 
 //////////////////////////
 //////////////////////////
@@ -125,6 +128,15 @@ void TktlDisplayWordMeta(uint8_t debug, uint16_t word_index, struct TktlVSM2Word
 	if(debug == 1) {
 		LogTextMessage("Word %d length: %d", word_index, word_meta->length);
 		LogTextMessage("Word %d increment: %d", word_index, word_meta->increment);
+		LogTextMessage("Word %d LPC entry-point: %d\n", word_index, word_meta->lpc_entry_point);
+	};
+};
+
+void TktlDisplayWordMetaFF(uint8_t debug, uint16_t word_index, struct TktlVSM2FFWordMeta *word_meta) {
+	LogTextMessage("\n==== Talker Tools Reader message: ====");
+	LogTextMessage("Word %d spelling: %s", word_index, word_meta->spelling);
+	if(debug == 1) {
+		LogTextMessage("Word %d length (frames): %d, (bytes): %d", word_index, word_meta->length, word_meta->length * 8);
 		LogTextMessage("Word %d LPC entry-point: %d\n", word_index, word_meta->lpc_entry_point);
 	};
 };

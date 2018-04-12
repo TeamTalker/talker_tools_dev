@@ -192,7 +192,7 @@ private:
     // Word-playback settings
     bool word_end_;   
 	uint32_t counter_;
-	uint8_t frame_length_ ;
+	uint32_t frame_length_;
 	bool step_frame_;
     
     // Stream position object instance

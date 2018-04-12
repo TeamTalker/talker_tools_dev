@@ -1,64 +1,115 @@
 <patch-1.0 appVersion="1.0.12">
-   <obj type="env/ahd lin m" uuid="f9b46834ce96425064b4ed7f53ad8b91ea1ac0ef" name="ahd_1" x="1120" y="70">
+   <obj type="audio/outconfig" uuid="eace67e3304afaa1bb695b444e9345f2d8adaf00" name="outconfig_1" x="1260" y="42">
+      <params/>
+      <attribs>
+         <combo attributeName="headphones" selection="-6dB"/>
+         <combo attributeName="mode" selection="Stereo"/>
+      </attribs>
+   </obj>
+   <obj type="env/ahd lin m" uuid="f9b46834ce96425064b4ed7f53ad8b91ea1ac0ef" name="ahd_1" x="994" y="56">
       <params>
          <frac32.s.map name="a" value="-64.0"/>
-         <frac32.s.map name="d" value="-44.0"/>
+         <frac32.s.map name="d" value="-34.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="1330" y="84">
+   <obj type="timer/pulselength" uuid="ca68725237d8ba8407773340801660a9fd9b0dba" name="pulselength_1" x="378" y="70">
+      <params>
+         <frac32.s.map name="delay" value="22.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="word-end" x="490" y="70">
       <params/>
       <attribs/>
    </obj>
-   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1232" y="126">
+   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1106" y="112">
       <params>
          <frac32.u.map name="value" value="64.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl loader vsm2" uuid="37f03a79-ba9e-44af-957e-28f486587b54" name="tktl_3" x="168" y="140">
+   <obj type="math/*" uuid="3ac307b9f782049739ed62504081b96d580ea336" name="*_1" x="1190" y="112">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="Output" x="1260" y="112">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="tktl/voice/talker_tools/tktl loader vsm2" uuid="37f03a79-ba9e-44af-957e-28f486587b54" name="tktl_3" x="168" y="154">
       <params/>
       <attribs>
          <file attributeName="rom" file="ROMs/talkieROM.vsm2"/>
          <combo attributeName="debug" selection="on"/>
       </attribs>
    </obj>
-   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="gate" x="378" y="154">
+   <obj type="tktl/voice/talker_tools/tktl voiced source" uuid="20c25aa2-a8ac-4f32-9707-5c28c40fcd00" name="tktl_2" x="560" y="154">
+      <params>
+         <frac32.s.map name="pitch" value="0.0"/>
+         <int32 name="wave" value="0"/>
+         <int32.hradio name="pmode" value="1"/>
+         <bool32.tgl name="glide" value="0"/>
+         <frac32.u.map name="glideamt" value="40.0"/>
+      </params>
+      <attribs>
+         <combo attributeName="debug" selection="off"/>
+      </attribs>
+   </obj>
+   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="gate" x="378" y="168">
       <params/>
       <attribs/>
    </obj>
-   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="word-end" x="462" y="154">
+   <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="1190" y="182">
       <params/>
       <attribs/>
    </obj>
-   <obj type="math/*" uuid="3ac307b9f782049739ed62504081b96d580ea336" name="*_1" x="1330" y="154">
-      <params/>
+   <obj type="tktl/voice/talker_tools/tktl source mixer" uuid="e2e6ba5d-3be4-43b7-b420-a6fe4492a77b" name="tktl_6" x="784" y="224">
+      <params>
+         <bool32.tgl name="unvoiced" value="0"/>
+         <frac32.u.map name="bias" value="0.0"/>
+         <bool32.tgl name="glide" value="0"/>
+         <frac32.u.map name="glideamt" value="50.5"/>
+      </params>
       <attribs/>
    </obj>
-   <obj type="midi/in/keyb zone lru" uuid="36a44968a4f8b980273e94dca846b7544a3c45d2" name="keyb_1" x="28" y="224">
+   <obj type="tktl/voice/talker_tools/tktl lpc filter" uuid="2b2d03be-8ed3-4479-9c36-eaa13b741a5d" name="tktl_7" x="994" y="224">
+      <params>
+         <bool32.tgl name="glide" value="0"/>
+         <frac32.u.map name="glideamt" value="22.5"/>
+         <frac32.s.map name="formant" MidiCC="3" value="40.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="midi/in/keyb zone touch" uuid="b50844801544a4d92e447c983cf5c3acafbbdf17" name="keyb_2" x="28" y="238">
       <params/>
       <attribs>
          <spinner attributeName="startNote" value="0"/>
          <spinner attributeName="endNote" value="127"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl reader vsm2" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb" name="tktl_1" x="168" y="224">
+   <obj type="tktl/voice/talker_tools/tktl reader vsm2" uuid="27dcf1ec-8175-452b-b021-ea39a99cbfeb" name="tktl_1" x="168" y="238">
       <params>
-         <int32 name="word" value="38"/>
-         <frac32.u.map name="rate" value="32.5"/>
-         <frac32.u.map name="bend" value="0.0"/>
-         <bool32.tgl name="loop" value="1"/>
+         <int32 name="word" value="77"/>
+         <bool32.tgl name="bend" value="0"/>
+         <frac32.u.map name="bendposition" value="43.5"/>
+         <bool32.tgl name="play" value="0"/>
+         <bool32.tgl name="oneshot" value="0">
+            <presets/>
+         </bool32.tgl>
+         <bool32.tgl name="loop" value="0"/>
          <bool32.tgl name="freeze" value="0"/>
          <bool32.mom name="step" value="0"/>
          <bool32.mom name="setjump" value="0"/>
          <bool32.mom name="jump" value="0"/>
          <bool32.mom name="glitch" value="0"/>
+         <frac32.u.map name="rate" value="32.0"/>
       </params>
       <attribs>
          <combo attributeName="debug" selection="off"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="tktl_4" x="378" y="224">
+   <obj type="tktl/voice/talker_tools/tktl tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="tktl_4" x="378" y="238">
       <params>
          <int32 name="tables" value="0"/>
          <bool32.tgl name="interpolation" value="1"/>
@@ -66,528 +117,6 @@
       <attribs>
          <combo attributeName="debug" selection="off"/>
       </attribs>
-   </obj>
-   <patchobj type="patch/object" uuid="6556facb-1322-4429-ba75-7887b2fe92a3" name="demult" x="560" y="224">
-      <params/>
-      <attribs/>
-      <object id="patch/object" uuid="6556facb-1322-4429-ba75-7887b2fe92a3">
-         <author>Team Talker</author>
-         <license>BSD</license>
-         <inlets>
-            <frac32buffer.bipolar name="TALKER"/>
-         </inlets>
-         <outlets>
-            <frac32buffer.bipolar name="TALKER" description=""/>
-            <int32.positive name="energy"/>
-            <int32.positive name="pitch"/>
-            <int32.bipolar name="k1"/>
-            <int32.bipolar name="k2"/>
-            <int32.bipolar name="k3"/>
-            <int32.bipolar name="k4"/>
-            <int32.bipolar name="k5"/>
-            <int32.bipolar name="k6"/>
-            <int32.bipolar name="k7"/>
-            <int32.bipolar name="k8"/>
-            <int32.bipolar name="k9"/>
-            <int32.bipolar name="k10"/>
-         </outlets>
-         <displays/>
-         <params/>
-         <attribs/>
-         <includes/>
-         <code.krate><![CDATA[//
-
-outlet_energy = inlet_TALKER[0];
-outlet_pitch  = inlet_TALKER[1];
-outlet_k1  = inlet_TALKER[2];
-outlet_k2  = inlet_TALKER[3];
-outlet_k3  = inlet_TALKER[4];
-outlet_k4  = inlet_TALKER[5];
-outlet_k5  = inlet_TALKER[6];
-outlet_k6  = inlet_TALKER[7];
-outlet_k7  = inlet_TALKER[8];
-outlet_k8  = inlet_TALKER[9];
-outlet_k9  = inlet_TALKER[10];
-outlet_k10 = inlet_TALKER[11];
-
-for(int i = 0; i < 16; i++) {
-	outlet_TALKER[i] = inlet_TALKER[i];	
-};]]></code.krate>
-      </object>
-   </patchobj>
-   <obj type="tktl/voice/talker_tools/tktl voiced source" uuid="20c25aa2-a8ac-4f32-9707-5c28c40fcd00" name="tktl_2" x="658" y="224">
-      <params>
-         <frac32.s.map name="pitch" value="0.0"/>
-         <int32 name="wave" value="0"/>
-         <int32.hradio name="pmode" value="2"/>
-         <bool32.tgl name="glide" value="1"/>
-         <frac32.u.map name="glideamt" value="28.0"/>
-      </params>
-      <attribs>
-         <combo attributeName="debug" selection="off"/>
-      </attribs>
-   </obj>
-   <patchobj type="patch/object" uuid="0c5470ff-da3f-4dc8-9848-fbe7ff65bd4e" name="Talkie Unvoiced Source" x="882" y="224">
-      <params>
-         <frac32.s.map name="pitch" value="2.0"/>
-         <frac32.u.map name="octave" value="64.0"/>
-         <bool32.tgl name="fixed" value="1"/>
-      </params>
-      <attribs/>
-      <object id="patch/object" uuid="0c5470ff-da3f-4dc8-9848-fbe7ff65bd4e">
-         <sDescription>hexadecimal display (for developers)</sDescription>
-         <author>toneburst</author>
-         <license>BSD</license>
-         <helpPatch>disp.axh</helpPatch>
-         <inlets>
-            <frac32.bipolar name="pitch" description="noise pitch"/>
-            <frac32.positive name="octave" description="noise octave-shift"/>
-         </inlets>
-         <outlets>
-            <frac32buffer.bipolar name="noise" description="noise"/>
-         </outlets>
-         <displays/>
-         <params>
-            <frac32.s.map.pitch name="pitch" description="pitch input"/>
-            <frac32.u.map name="octave" description="noise octave"/>
-            <bool32.tgl name="fixed" description="fixed 8kHz pitch"/>
-         </params>
-         <attribs/>
-         <includes/>
-         <code.declaration><![CDATA[
-
-// Phase-counter
-int32_t osc_phase;
-// Cycle counter
-int8_t render_count;
-// Current output sample value
-int32_t sample;
-
-////////////////////////
-// LPC Noise Function //
-////////////////////////
-
-int32_t unvoiced_source;
-uint16_t synth_random = 1;
-
-int32_t TkRenderUnvoiced() {
-	synth_random = (synth_random >> 1) ^ ((synth_random & 1) ? 0xB800 : 0);
-	unvoiced_source = (synth_random & 1) ? 1 << 27 : -1 << 27;
-	return unvoiced_source;
-}
-
-]]></code.declaration>
-         <code.init><![CDATA[
-
-LogTextMessage("Initialising toneburst Talkie Synth Unvoiced Source");
-
-osc_phase = 0;
-render_count = 0;
-
-]]></code.init>
-         <code.krate><![CDATA[
-
-
-// Calculate phase-increment
-uint32_t freq;
-MTOFEXTENDED(param_pitch + inlet_pitch,freq);
-
-// Calculate octave multiplier for phase-increment
-uint8_t multiplier = __USAT(param_octave + inlet_octave, 27) >> 22;
-// Ensure multiplier has minimum value of 1
-multiplier = (multiplier == 0) ? 1 : multiplier;
-// Multiply phase-increment by octave multiplier (phase will wrap at 32 bits)
-freq *= multiplier;
-
-/////////////////
-// Render Loop //
-/////////////////
-
-// Loop through outlet buffer
-for(uint8_t j = 0; j < BUFSIZE; j++) {
-	// If 'fixed' bool set, render noise at fixed 8kHz
-	if(param_fixed) {
-		if(render_count == 0) {
-			sample = TkRenderUnvoiced();
-		}
-	// Else render noise sample once per phase cycle
-	} else {
-		if(osc_phase <= freq) {
-			// Update sample
-			sample = TkRenderUnvoiced();
-		}
-	}
-	// Increment phase-counter
-	osc_phase += freq;
-	// Incremement cycle counter
-	render_count = (render_count == 5) ? 0 : render_count + 1;
-	// Set noise output buffer at sample j
-	outlet_noise[j] = sample;
-}
-
-]]></code.krate>
-      </object>
-   </patchobj>
-   <patchobj type="patch/object" uuid="06902663-1848-4c47-84be-beae9351032a" name="Talkie Mixer" x="1008" y="224">
-      <params>
-         <bool32.tgl name="unvoiced" value="0"/>
-         <frac32.u.map name="bias" value="0.5"/>
-         <bool32.tgl name="glide" value="0"/>
-         <frac32.u.map name="glideamt" value="52.5"/>
-      </params>
-      <attribs/>
-      <object id="patch/object" uuid="06902663-1848-4c47-84be-beae9351032a">
-         <sDescription>crossfade between two inputs</sDescription>
-         <author>toneburst</author>
-         <license>BSD</license>
-         <inlets>
-            <bool32 name="unvoiced" description="switch between voiced and unvoiced waves"/>
-            <int32.positive name="energy" description="energy (volume)"/>
-            <int32.positive name="pitch" description="synth period"/>
-            <frac32buffer name="voicedWave" description="voiced wave"/>
-            <frac32buffer name="unvoicedWave" description="unvoiced wave"/>
-            <frac32.positive name="bias" description="mix unvoiced (noise) into voiced source"/>
-            <bool32 name="glide" description="apply glide to voiced/unvoiced mix"/>
-            <frac32.positive name="glideamt" description="glide rate (fast to slow)"/>
-         </inlets>
-         <outlets>
-            <frac32buffer.bipolar name="wave"/>
-         </outlets>
-         <displays/>
-         <params>
-            <bool32.tgl name="unvoiced" description="unvoiced switch"/>
-            <frac32.u.map name="bias" description="mix unvoiced (noise) into voiced source"/>
-            <bool32.tgl name="glide" description="apply slew to voiced/unvoiced mix"/>
-            <frac32.u.map name="glideamt" description="glide rate (fast to slow)"/>
-         </params>
-         <attribs/>
-         <includes/>
-         <code.declaration><![CDATA[
-
-int32_t mix;
-int32_t mix_slew_state;
-
-///////////////////////
-// Utility Functions //
-///////////////////////
-
-// Slew function, with pointer to state variable
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Slew32(int32_t target, int32_t *state, int32_t slew_time, bool enable) {
-	if (enable && slew_time > 0) {
-		*state = ___SMMLA(*state - target, (-1 << 26) + (slew_time >> 1), *state);
-		return *state;
-	} else {
-		*state = target;
-		return target;
-	};
-};
-
-// Exponential interpolation
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t CurveExp32(int32_t val) {
-	// Transform inlet val to float in 0 - 1 range
-	float inf = val * (float)(1.0f / (1 << 27));
-	float curve = inf*inf;
-	return (int32_t)(curve * (float)(1 << 27));
-}
-
-]]></code.declaration>
-         <code.init><![CDATA[
-
-LogTextMessage("Initialising toneburst Talkie Synth Excitation Source Mixer");
-
-mix = 0;
-mix_slew_state = 0;
-
-]]></code.init>
-         <code.krate><![CDATA[
-
-// Set mix to max if unvoiced param or inlet set true, else set to values from bias param/inlet (saturated to 27 bits)
-mix = (inlet_unvoiced || param_unvoiced || (!inlet_pitch)) ? 0x07ffffff : CurveExp32(__USAT(param_bias + inlet_bias, 27));
-
-// Apply slew to mix value
-if(param_glide || inlet_glide)
-	mix = Slew32(mix, &mix_slew_state, __USAT(param_glideamt + inlet_glideamt, 27), true);
-
-// Inverted mix value
-int32_t ccompl = ((128 << 20) - mix);
-
-]]></code.krate>
-         <code.srate><![CDATA[
-
-// Mix voiced and unvoiced inlets (code from Factory mix/xfade object)
-int64_t a = (int64_t)(inlet_unvoicedWave >> 2) * mix;
-a += (int64_t)inlet_voicedWave * ccompl;
-
-// Multiply by synthEnergy value
-a *= inlet_energy;
-
-// Set outlet sample
-outlet_wave = a >> 35;
-
-]]></code.srate>
-      </object>
-   </patchobj>
-   <patchobj type="patch/object" uuid="1f12a642-3e48-4b0e-9196-1f8ed2821c04" name="LPC Filter" x="1148" y="224">
-      <params>
-         <bool32.tgl name="glide" value="0"/>
-         <frac32.u.map name="glideamt" value="31.5"/>
-         <int32.hradio name="srate" MidiCC="5" value="1"/>
-      </params>
-      <attribs/>
-      <object id="patch/object" uuid="1f12a642-3e48-4b0e-9196-1f8ed2821c04">
-         <sDescription>equal</sDescription>
-         <author>toneburst</author>
-         <license>BSD</license>
-         <helpPatch>math.axh</helpPatch>
-         <inlets>
-            <frac32buffer.bipolar name="excitation" description="input from voiced/unvoiced source mixer"/>
-            <int32.bipolar name="k1" description="lattice filter coefficient k1"/>
-            <int32.bipolar name="k2" description="lattice filter coefficient k2"/>
-            <int32.bipolar name="k3" description="lattice filter coefficient k3"/>
-            <int32.bipolar name="k4" description="lattice filter coefficient k4"/>
-            <int32.bipolar name="k5" description="lattice filter coefficient k5"/>
-            <int32.bipolar name="k6" description="lattice filter coefficient k6"/>
-            <int32.bipolar name="k7" description="lattice filter coefficient k7"/>
-            <int32.bipolar name="k8" description="lattice filter coefficient k8"/>
-            <int32.bipolar name="k9" description="lattice filter coefficient k9"/>
-            <int32.bipolar name="k10" description="lattice filter coefficient k10"/>
-            <bool32.risingfalling name="glide" description="apply glide to filter bands"/>
-            <bool32 name="glideamt" description="glide rate (fast to slow)"/>
-         </inlets>
-         <outlets>
-            <frac32buffer.bipolar name="voice" description="voice output"/>
-            <frac32buffer.bipolar name="error" description="error signal output"/>
-         </outlets>
-         <displays/>
-         <params>
-            <bool32.tgl name="glide" description="apply glide to filter bands"/>
-            <frac32.u.map name="glideamt" description="glide rate (fast to slow)"/>
-            <int32.hradio name="srate" description="sample-rate (low/med/high)">
-               <MaxValue i="3"/>
-            </int32.hradio>
-         </params>
-         <attribs/>
-         <includes/>
-         <code.declaration><![CDATA[// Counter (counts S-Rate cycles)
-uint8_t sCounter;
-uint8_t sDivisor;
-
-// LPC state
-int32_t m_current_k[10];
-int32_t m_u[11];
-int32_t m_x[10];
-
-// Glide rate/state
-uint32_t gRate;
-int32_t k_gState[10];
-
-// Output sample struct (voice and error)
-struct _lattice_output {
-	int32_t voice;
-	int32_t error;	
-} samples;
-
-// Excitation signal value
-int32_t m_excitation_data = 0;
-
-// Output sample
-int32_t sample;
-int32_t errorSample;
-
-//////////////////////////
-// LPC filter functions //
-//////////////////////////
-
-// Copied more-or-less verbatim (including comments)
-// https://github.com/mamedev/mame/blob/master/src/devices/sound/tms5110.cpp
-// Massive thank-you to the authors, particularly Lord Nightmare, who has also been kind enough
-// to patiently answer my Stupid Questions on Twitter
-
-int16_t lpc_clip_analog(int16_t cliptemp) {
-	/* clipping, just like the patent shows:
-	 * the top 10 bits of this result are visible on the digital output IO pin.
-	 * next, if the top 3 bits of the 14 bit result are all the same, the lowest of those 3 bits plus the next 7 bits are the signed analog output,
-	 * otherwise the low bits are all forced to match the inverse of the topmost bit, i.e.:
-	 * 1x xxxx xxxx xxxx -> 0b10000000
-	 * 11 1bcd efgh xxxx -> 0b1bcdefgh
-	 * 00 0bcd efgh xxxx -> 0b0bcdefgh
-	 * 0x xxxx xxxx xxxx -> 0b01111111
-	 */
-	if (cliptemp > 2047)
-		cliptemp = 2047;
-	else if (cliptemp < -2048)
-		cliptemp = -2048;
-	/* at this point the analog output is tapped */
-	// input:  ssss snnn nnnn nnnn
-	// N taps:       ^^^ ^         = 0x0780
-	// output: snnn nnnn nnnn NNNN
-	return (cliptemp << 4) | ((cliptemp & 0x780) >> 7); // upshift and range adjust
-}
-
-static int32_t lpc_matrix_multiply(int32_t a, int32_t b) {
-	int32_t result;
-	while (a > 511) { a -= 1024; }
-	while (a < -512) { a += 1024; }
-	while (b > 16383) { b -= 32768; }
-	while (b < -16384) { b += 32768; }
-	result = ((a * b) >> 9); /** TODO: this isn't technically right to the chip, which truncates the lowest result bit, but it causes glitches otherwise. **/
-	return result;
-}
-
-_lattice_output lpc_lattice_filter() {
-	// Lattice filter here
-	// Aug/05/07: redone as unrolled loop, for clarity - LN
-	/* Originally Copied verbatim from table I in US patent 4,209,804, now updated to be in same order as the actual chip does it, not that it matters.
-	  notation equivalencies from table:
-	  Yn(i) == m_u[n-1]
-	  Kn = m_current_k[n-1]
-	  bn = m_x[n-1]
-	*/
-	
-	m_u[10] = m_excitation_data;
-	m_u[9] = m_u[10] - lpc_matrix_multiply(m_current_k[9], m_x[9]);
-	m_u[8] = m_u[9]  - lpc_matrix_multiply(m_current_k[8], m_x[8]);
-	m_u[7] = m_u[8]  - lpc_matrix_multiply(m_current_k[7], m_x[7]);
-	m_u[6] = m_u[7]  - lpc_matrix_multiply(m_current_k[6], m_x[6]);
-	m_u[5] = m_u[6]  - lpc_matrix_multiply(m_current_k[5], m_x[5]);
-	m_u[4] = m_u[5]  - lpc_matrix_multiply(m_current_k[4], m_x[4]);
-	m_u[3] = m_u[4]  - lpc_matrix_multiply(m_current_k[3], m_x[3]);
-	m_u[2] = m_u[3]  - lpc_matrix_multiply(m_current_k[2], m_x[2]);
-	m_u[1] = m_u[2]  - lpc_matrix_multiply(m_current_k[1], m_x[1]);
-	m_u[0] = m_u[1]  - lpc_matrix_multiply(m_current_k[0], m_x[0]);
-
-	int32_t err = m_x[9] + lpc_matrix_multiply(m_current_k[9], m_u[9]); //x_10, real chip doesn't use or calculate this
-
-	m_x[9] = m_x[8] + lpc_matrix_multiply(m_current_k[8], m_u[8]);
-	m_x[8] = m_x[7] + lpc_matrix_multiply(m_current_k[7], m_u[7]);
-	m_x[7] = m_x[6] + lpc_matrix_multiply(m_current_k[6], m_u[6]);
-	m_x[6] = m_x[5] + lpc_matrix_multiply(m_current_k[5], m_u[5]);
-	m_x[5] = m_x[4] + lpc_matrix_multiply(m_current_k[4], m_u[4]);
-	m_x[4] = m_x[3] + lpc_matrix_multiply(m_current_k[3], m_u[3]);
-	m_x[3] = m_x[2] + lpc_matrix_multiply(m_current_k[2], m_u[2]);
-	m_x[2] = m_x[1] + lpc_matrix_multiply(m_current_k[1], m_u[1]);
-	m_x[1] = m_x[0] + lpc_matrix_multiply(m_current_k[0], m_u[0]);
-	m_x[0] = m_u[0];
-
-	// Return final results (voice and error signals)
-	return {
-		.voice = m_u[0],
-		.error = err
-	};
-}
-
-///////////////////////////////////////////////////
-// Slew function, with pointer to state variable //
-///////////////////////////////////////////////////
-
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t slew32(int32_t target, int32_t *state, int32_t slewTime, bool enable) {
-	if (enable && slewTime > 0) {
-		*state = ___SMMLA(*state - target, (-1 << 26) + (slewTime >> 1), *state);
-		return *state;
-	} else {
-		*state = target;
-		return target;
-	};
-}]]></code.declaration>
-         <code.init><![CDATA[
-
-// Counter (counts S-Rate cycles)
-sCounter = 1; // Counter 1 > 6
-sDivisor = 6; // 6 s-rate cycles = 8kHz
-
-// LPC state
-m_current_k[10] = {0};
-m_u[11] = {0};
-m_x[10] = {0};
-
-// Glide rate/state-store
-gRate = 0;
-k_gState[10] = {0};
-
-// Excitation signal value
-m_excitation_data = 0;
-
-// Output sample struct (voice and error)
-samples = {0};
-
-]]></code.init>
-         <code.krate><![CDATA[
-
-//////////////////////
-// Process Controls //
-//////////////////////
-
-// Glide-rate
-gRate = (param_glide || inlet_glide) ? __USAT(param_glideamt + inlet_glideamt, 27) : 0;
-
-// Sample-rate select
-switch(param_srate) {
-	case 0 :
-		sDivisor = 12;
-		break;
-	case 1 :
-		sDivisor = 6;
-		break;
-	case 2 :
-		sDivisor = 3;
-		break;
-}
-
-///////////////////////
-// Grab inlet values //
-///////////////////////
-
-m_current_k[0] = slew32(inlet_k1  << 16, &k_gState[0], gRate, true) >> 16;
-m_current_k[1] = slew32(inlet_k2  << 16, &k_gState[1], gRate, true) >> 16;
-m_current_k[2] = slew32(inlet_k3  << 16, &k_gState[2], gRate, true) >> 16;
-m_current_k[3] = slew32(inlet_k4  << 16, &k_gState[3], gRate, true) >> 16;
-m_current_k[4] = slew32(inlet_k5  << 16, &k_gState[4], gRate, true) >> 16;
-m_current_k[5] = slew32(inlet_k6  << 16, &k_gState[5], gRate, true) >> 16;
-m_current_k[6] = slew32(inlet_k7  << 16, &k_gState[6], gRate, true) >> 16;
-m_current_k[7] = slew32(inlet_k8  << 16, &k_gState[7], gRate, true) >> 16;
-m_current_k[8] = slew32(inlet_k9  << 16, &k_gState[8], gRate, true) >> 16;
-m_current_k[9] = slew32(inlet_k10 << 16, &k_gState[9], gRate, true) >> 16;
-
-////////////////////////////////
-// Loop through sample buffer //
-////////////////////////////////
-
-for(uint8_t i = 0; i < BUFSIZE; i++) {
-	
-	if(sCounter == 1) {
-		// Render samples at 8kHz
-		samples = lpc_lattice_filter();
-	}
-	
-	// Update srate cycle-counter
-	sCounter = (sCounter > (sDivisor - 1)) ? 1 : sCounter + 1;
-
-	// Voice output sample
-	outlet_voice[i] = lpc_clip_analog(samples.voice) << 16;
-	
-	// Error sample output (not as interesting as I hoped, but it's there if you want it...)
-	outlet_error[i] = samples.error << 20;
-}
-
-]]></code.krate>
-         <code.srate><![CDATA[
-
-// Grab excitation signal
-m_excitation_data = inlet_excitation >> 19;
-
-]]></code.srate>
-      </object>
-   </patchobj>
-   <obj type="filter/lp" uuid="1427779cf086ab83c8b03eeeac69c2a97759c651" name="LP Filter" x="1288" y="224">
-      <params>
-         <frac32.s.map name="pitch" value="64.0"/>
-         <frac32.u.map name="reso" value="0.0"/>
-      </params>
-      <attribs/>
-   </obj>
-   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="Output" x="1400" y="224">
-      <params/>
-      <attribs/>
    </obj>
    <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_10" x="378" y="336">
       <params/>
@@ -633,7 +162,79 @@ disp_k10 = inlet_TALKER[9] << 20;
 //]]></code.krate>
       </object>
    </patchobj>
-   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_9" x="1358" y="392">
+   <obj type="tktl/voice/talker_tools/tktl unvoiced source" uuid="4466f754-3f24-4bbc-9f6a-c0ac30754f9f" name="tktl_5" x="546" y="392">
+      <params>
+         <bool32.tgl name="fixed" value="1"/>
+         <frac32.s.map name="pitch" value="0.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="ctrl/dial b" uuid="862e7d7f29093cb1ce4aed72244d118ad4d46692" name="dial_1" x="672" y="574">
+      <params>
+         <frac32.s.map name="value" value="0.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <patchobj type="patch/object" uuid="99da9a29-fe06-44f5-8546-d5b53d807948" name="==_1" x="910" y="588">
+      <params>
+         <bool32.mom name="run" value="0"/>
+      </params>
+      <attribs/>
+      <object id="patch/object" uuid="99da9a29-fe06-44f5-8546-d5b53d807948">
+         <sDescription>equal</sDescription>
+         <author>Johannes Taelman</author>
+         <license>BSD</license>
+         <helpPatch>math.axh</helpPatch>
+         <inlets/>
+         <outlets/>
+         <displays/>
+         <params>
+            <bool32.mom name="run"/>
+         </params>
+         <attribs/>
+         <includes/>
+         <code.declaration><![CDATA[//
+
+float sample_rate;
+float clock_phase;
+bool run;
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE float ThisBlepSample(float t) {
+	return 0.5f * t * t;
+}
+
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE float NextBlepSample(float t) {
+	t = 1.0f - t;
+	return -0.5f * t * t;
+}
+
+//]]></code.declaration>
+         <code.init><![CDATA[//
+
+sample_rate = 0.16667;
+float clock_phase = 0;
+bool run;
+
+//]]></code.init>
+         <code.krate><![CDATA[//
+
+if(param_run) {
+	if(!run) {
+		 for(uint8_t j = 0; j < BUFSIZE; j++){
+			clock_phase += sample_rate;
+			if (clock_phase >= 1.0f) {
+				clock_phase -= 1.0f;
+				float reset_time = clock_phase / sample_rate;
+				LogTextMessage("phase,%f,reset_time,%f,thisblep,%f,nextblep,%f", clock_phase, reset_time, ThisBlepSample(reset_time), NextBlepSample(reset_time));
+			}
+		}
+	}
+}
+
+run = param_run;]]></code.krate>
+      </object>
+   </patchobj>
+   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="Inspector" x="994" y="588">
       <params>
          <int32 name="index" value="4"/>
       </params>
@@ -678,111 +279,58 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
          <dest obj="vca_1" inlet="v"/>
       </net>
       <net>
-         <source obj="LPC Filter" outlet="voice"/>
-         <dest obj="LP Filter" inlet="in"/>
-      </net>
-      <net>
-         <source obj="Talkie Mixer" outlet="wave"/>
-         <dest obj="LPC Filter" inlet="excitation"/>
-      </net>
-      <net>
-         <source obj="Talkie Unvoiced Source" outlet="noise"/>
-         <dest obj="Talkie Mixer" inlet="unvoicedWave"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="pitch"/>
-         <dest obj="Talkie Mixer" inlet="pitch"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="energy"/>
-         <dest obj="Talkie Mixer" inlet="energy"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k1"/>
-         <dest obj="LPC Filter" inlet="k1"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k2"/>
-         <dest obj="LPC Filter" inlet="k2"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k3"/>
-         <dest obj="LPC Filter" inlet="k3"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k4"/>
-         <dest obj="LPC Filter" inlet="k4"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k5"/>
-         <dest obj="LPC Filter" inlet="k5"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k6"/>
-         <dest obj="LPC Filter" inlet="k6"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k7"/>
-         <dest obj="LPC Filter" inlet="k7"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k8"/>
-         <dest obj="LPC Filter" inlet="k8"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k9"/>
-         <dest obj="LPC Filter" inlet="k9"/>
-      </net>
-      <net>
-         <source obj="demult" outlet="k10"/>
-         <dest obj="LPC Filter" inlet="k10"/>
-      </net>
-      <net>
-         <source obj="LP Filter" outlet="out"/>
-         <dest obj="vca_1" inlet="a"/>
-      </net>
-      <net>
          <source obj="*_1" outlet="result"/>
          <dest obj="Output" inlet="right"/>
          <dest obj="Output" inlet="left"/>
       </net>
       <net>
-         <source obj="keyb_1" outlet="gate"/>
-         <dest obj="tktl_1" inlet="gate"/>
-      </net>
-      <net>
          <source obj="tktl_1" outlet="gate"/>
          <dest obj="gate" inlet="in"/>
-         <dest obj="tktl_4" inlet="gate"/>
-      </net>
-      <net>
-         <source obj="tktl_1" outlet="wordend"/>
-         <dest obj="word-end" inlet="in"/>
-      </net>
-      <net>
-         <source obj="tktl_1" outlet="tALKER"/>
-         <dest obj="tktl_4" inlet="tALKER"/>
-         <dest obj="hex_10" inlet="TALKER"/>
-      </net>
-      <net>
-         <source obj="tktl_4" outlet="tALKER"/>
-         <dest obj="demult" inlet="TALKER"/>
-      </net>
-      <net>
-         <source obj="tktl_4" outlet="gate"/>
          <dest obj="ahd_1" inlet="trig"/>
       </net>
       <net>
-         <source obj="demult" outlet="TALKER"/>
+         <source obj="tktl_1" outlet="wordend"/>
+         <dest obj="pulselength_1" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="tktl_1" outlet="tALKER"/>
+         <dest obj="hex_10" inlet="TALKER"/>
+         <dest obj="tktl_4" inlet="tALKER"/>
+      </net>
+      <net>
+         <source obj="tktl_4" outlet="TALKEr"/>
          <dest obj="tktl_2" inlet="TALKEr"/>
+         <dest obj="tktl_6" inlet="TALKEr"/>
+         <dest obj="tktl_7" inlet="TALKEr"/>
       </net>
       <net>
-         <source obj="tktl_2" outlet="voiced"/>
-         <dest obj="Talkie Mixer" inlet="voicedWave"/>
+         <source obj="pulselength_1" outlet="pulse"/>
+         <dest obj="word-end" inlet="in"/>
       </net>
       <net>
-         <source obj="keyb_1" outlet="note"/>
+         <source obj="keyb_2" outlet="note"/>
          <dest obj="tktl_2" inlet="note"/>
+         <dest obj="tktl_5" inlet="pitch"/>
+      </net>
+      <net>
+         <source obj="keyb_2" outlet="gate"/>
+         <dest obj="tktl_1" inlet="gate"/>
+      </net>
+      <net>
+         <source obj="tktl_2" outlet="VOICED"/>
+         <dest obj="tktl_6" inlet="VOICED"/>
+      </net>
+      <net>
+         <source obj="tktl_5" outlet="UNVOICED"/>
+         <dest obj="tktl_6" inlet="UNVOICED"/>
+      </net>
+      <net>
+         <source obj="tktl_6" outlet="EXCITATION"/>
+         <dest obj="tktl_7" inlet="EXCITATION"/>
+      </net>
+      <net>
+         <source obj="tktl_7" outlet="wave"/>
+         <dest obj="vca_1" inlet="a"/>
       </net>
    </nets>
    <settings>
@@ -790,9 +338,9 @@ outlet_debug = inlet_TALKER[param_index];]]></code.krate>
    </settings>
    <notes><![CDATA[]]></notes>
    <windowPos>
-      <x>155</x>
-      <y>88</y>
-      <width>1617</width>
-      <height>906</height>
+      <x>272</x>
+      <y>25</y>
+      <width>1642</width>
+      <height>832</height>
    </windowPos>
 </patch-1.0>

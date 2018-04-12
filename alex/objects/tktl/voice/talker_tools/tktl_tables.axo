@@ -5,12 +5,10 @@ Part of the Talker Tools object set.</sDescription>
       <author>Team Talker</author>
       <license>BSD</license>
       <inlets>
-         <frac32buffer.positive name="tALKER" description="multiplexed lpc index values NOT AUDIO!!"/>
-         <bool32.risingfalling name="gate" description="gate passthrough"/>
+         <frac32buffer.positive name="tALKER" description="Talker Tools index connection (NOT AUDIO!)"/>
       </inlets>
       <outlets>
-         <frac32buffer.bipolar name="tALKER"/>
-         <bool32 name="gate" description="gate pass-through"/>
+         <frac32buffer.bipolar name="TALKEr" description="Talker Tools V-Bus connection (NOT AUDIO!)"/>
       </outlets>
       <displays/>
       <params>
@@ -35,25 +33,26 @@ Part of the Talker Tools object set.</sDescription>
       <file-depends>
          <file-depend localFilename="data/lpc_tables.raw" targetPath="/shared/lpc/lpc_tables.raw"/>
       </file-depends>
+      <includes>
+         <include>./inc/file_io.h</include>
+         <include>./inc/toneburst-utility-functions.h</include>
+      </includes>
       <depends>
          <depend>fatfs</depend>
       </depends>
-      <code.declaration><![CDATA[//
+      <code.declaration><![CDATA[// START LOCAL DATA
 
 /*
- * Based on code from
- * https://raw.githubusercontent.com/mamedev/mame/master/src/devices/sound/tms5110.cpp
- *
- * With huge thanks to:
- * Frank Palazzolo
- * Neill Corlett
- * Aaron Giles
- * Lord Nightmare
- * Couriersud
- *
- * Your work is amazing!
+ * LPC coefficient table lookup and interpolation.
+ * Adapted from MAME tms5220.cpp by Frank Palazzolo et. al
+ * https://github.com/mamedev/mame/blob/master/src/devices/sound/tms5220.cpp
  * 
+ * With thanks.
+ * Your work is Amazing, guys!
+ * 
+ * toneburst/Team Talker 2018
  */
+
 
 /////////////////
 // Object vars //
@@ -135,9 +134,8 @@ void DisplayTablesInfo(LpcTables *tables, bool verbose) {
 	};
 };
 
-
-//]]></code.declaration>
-      <code.init><![CDATA[//
+// END LOCAL DATA]]></code.declaration>
+      <code.init><![CDATA[// START INIT
 
 LogTextMessage("\n//////////////////////////////////////////");
 LogTextMessage("// Initialising Talkie Tools LPC Tables //");
@@ -166,7 +164,7 @@ interp_counter		= 0;
 interp_counter_old	= 0;
 
 // Sets interpolation cycle rate
-interp_divisor		= 20;
+interp_divisor		= 4;
 
 // Current interpolation coefficient from table
 interp_coeff		= 0;
@@ -205,8 +203,10 @@ if(!TktlShared::ptr_lpc_coef_tables_sdram_) {
 ptr_lpc_tables_sdram_start = (struct LpcTables *)TktlShared::ptr_lpc_coef_tables_sdram_;
 ptr_lpc_tables_sdram = ptr_lpc_tables_sdram_start;
 
-//]]></code.init>
-      <code.krate><![CDATA[//
+LogTextMessage("Done...");
+
+// END INIT]]></code.init>
+      <code.krate><![CDATA[// START K-RATE
 
 /////////////////////
 // Set table index //
@@ -232,8 +232,9 @@ frame_trigger = inlet_tALKER[12];
 //Interpolate frames //
 ///////////////////////
 
-// Interpolation turn ON
-if(param_interpolation) {
+// Interpolation turn ON if param set + frame trigger is less than 2
+// (allows interpolation to be disabled if value higher than 1 is sent)
+if((param_interpolation) && (frame_trigger <= 1)) {
 
 	/////////////////////////////////////
 	// Reset counters on frame trigger //
@@ -244,7 +245,7 @@ if(param_interpolation) {
 		interp_counter = 0;
 
 		// Set reset flag if frame trigger happens during interpolation cycle
-		if((interp_counter > 0) && (interp_counter < 8)) {
+		if((interp_counter > 0) && (interp_counter <= 8)) {
 			reset_flag = true;
 		};
 	};
@@ -268,12 +269,30 @@ if(param_interpolation) {
 				////////////////////////////////////////////////////////
 				// Decide if interpolation is required for this frame //
 				////////////////////////////////////////////////////////
-				
-				if (((!unvoiced_flag_old) && unvoiced_flag_new) || ((unvoiced_flag_old) && !unvoiced_flag_new) || ((silent_flag_old) && !silent_flag_new))
+
+				/* 
+				 * Comments from MAME tms5220.cpp
+				 * https://github.com/mamedev/mame/blob/master/src/devices/sound/tms5220.cpp
+				 * 
+				 * in all cases where interpolation would be inhibited, set the inhibit flag; otherwise clear it.
+				 * Interpolation inhibit cases:
+				 * Old frame was voiced, new is unvoiced
+				 * Old frame was silence/zero energy, new has non-zero energy
+				 * Old frame was unvoiced, new is voiced
+				 * Old frame was unvoiced, new frame is silence/zero energy (non-existent on tms51xx rev D and F (present and working on tms52xx, present but buggy on tms51xx rev A and B))
+				 */
+				if (
+					((unvoiced_flag_old) && unvoiced_flag_new)
+					|| ((unvoiced_flag_old) && !unvoiced_flag_new)
+					|| ((silent_flag_old == 1) && !silent_flag_new)
+				)
+					//|| ((m_inhibit == 1) && (unvoiced_flag_old == 1) && silent_flag_new) ) //TMS51xx INTERP BUG1
+					//|| ((unvoiced_flag_old == 1) && silent_flag_new) )
 					interp_inhibit = true;
 				else
-					// Normal frame, normal interpolation
+					// normal frame, normal interpolation
 					interp_inhibit = false;
+				
 
 				////////////////////////////
 				// Capture new LPC values //
@@ -342,6 +361,7 @@ if(param_interpolation) {
 					lpc_frame_out.kvals[9] += ((lpc_frame_new.kvals[9] - lpc_frame_out.kvals[9]) >> interp_coeff);
 				};
 
+
 			////////////////////
 			// Last sub-frame //
 			////////////////////
@@ -365,18 +385,18 @@ if(param_interpolation) {
 	// Set interpolated output //
 	/////////////////////////////
 
-	outlet_tALKER[0]  = lpc_frame_out.energy;
-	outlet_tALKER[1]  = lpc_frame_out.pitch;
-	outlet_tALKER[2]  = lpc_frame_out.kvals[0];
-	outlet_tALKER[3]  = lpc_frame_out.kvals[1];
-	outlet_tALKER[4]  = lpc_frame_out.kvals[2];
-	outlet_tALKER[5]  = lpc_frame_out.kvals[3];
-	outlet_tALKER[6]  = lpc_frame_out.kvals[4];
-	outlet_tALKER[7]  = lpc_frame_out.kvals[5];
-	outlet_tALKER[8]  = lpc_frame_out.kvals[6];
-	outlet_tALKER[9]  = lpc_frame_out.kvals[7];
-	outlet_tALKER[10] = lpc_frame_out.kvals[8];
-	outlet_tALKER[11] = lpc_frame_out.kvals[9];
+	outlet_TALKEr[0]  = lpc_frame_out.energy;
+	outlet_TALKEr[1]  = lpc_frame_out.pitch;
+	outlet_TALKEr[2]  = lpc_frame_out.kvals[0];
+	outlet_TALKEr[3]  = lpc_frame_out.kvals[1];
+	outlet_TALKEr[4]  = lpc_frame_out.kvals[2];
+	outlet_TALKEr[5]  = lpc_frame_out.kvals[3];
+	outlet_TALKEr[6]  = lpc_frame_out.kvals[4];
+	outlet_TALKEr[7]  = lpc_frame_out.kvals[5];
+	outlet_TALKEr[8]  = lpc_frame_out.kvals[6];
+	outlet_TALKEr[9]  = lpc_frame_out.kvals[7];
+	outlet_TALKEr[10] = lpc_frame_out.kvals[8];
+	outlet_TALKEr[11] = lpc_frame_out.kvals[9];
 
 	// Update old interp_position
 	interp_counter_old = interp_counter;
@@ -389,34 +409,28 @@ if(param_interpolation) {
 // Set outlet values directly from inlets
 } else {
 
-	outlet_tALKER[0]  =  ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0]];
-	outlet_tALKER[1]  =  ptr_lpc_tables_sdram -> table_pitch[inlet_tALKER[1]];
-	outlet_tALKER[2]  =  ptr_lpc_tables_sdram -> table_k[0][inlet_tALKER[2]];
-	outlet_tALKER[3]  =  ptr_lpc_tables_sdram -> table_k[1][inlet_tALKER[3]];
-	outlet_tALKER[4]  =  ptr_lpc_tables_sdram -> table_k[2][inlet_tALKER[5]];
-	outlet_tALKER[5]  =  ptr_lpc_tables_sdram -> table_k[3][inlet_tALKER[5]];
-	outlet_tALKER[6]  =  ptr_lpc_tables_sdram -> table_k[4][inlet_tALKER[6]];
-	outlet_tALKER[7]  =  ptr_lpc_tables_sdram -> table_k[5][inlet_tALKER[7]];
-	outlet_tALKER[8]  =  ptr_lpc_tables_sdram -> table_k[6][inlet_tALKER[8]];
-	outlet_tALKER[9]  =  ptr_lpc_tables_sdram -> table_k[7][inlet_tALKER[9]];
-	outlet_tALKER[10] =  ptr_lpc_tables_sdram -> table_k[8][inlet_tALKER[10]];
-	outlet_tALKER[11] =  ptr_lpc_tables_sdram -> table_k[9][inlet_tALKER[11]];
+	outlet_TALKEr[0]  =  ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0]];
+	outlet_TALKEr[1]  =  ptr_lpc_tables_sdram -> table_pitch[inlet_tALKER[1]];
+	outlet_TALKEr[2]  =  ptr_lpc_tables_sdram -> table_k[0][inlet_tALKER[2]];
+	outlet_TALKEr[3]  =  ptr_lpc_tables_sdram -> table_k[1][inlet_tALKER[3]];
+	outlet_TALKEr[4]  =  ptr_lpc_tables_sdram -> table_k[2][inlet_tALKER[5]];
+	outlet_TALKEr[5]  =  ptr_lpc_tables_sdram -> table_k[3][inlet_tALKER[5]];
+	outlet_TALKEr[6]  =  ptr_lpc_tables_sdram -> table_k[4][inlet_tALKER[6]];
+	outlet_TALKEr[7]  =  ptr_lpc_tables_sdram -> table_k[5][inlet_tALKER[7]];
+	outlet_TALKEr[8]  =  ptr_lpc_tables_sdram -> table_k[6][inlet_tALKER[8]];
+	outlet_TALKEr[9]  =  ptr_lpc_tables_sdram -> table_k[7][inlet_tALKER[9]];
+	outlet_TALKEr[10] =  ptr_lpc_tables_sdram -> table_k[8][inlet_tALKER[10]];
+	outlet_TALKEr[11] =  ptr_lpc_tables_sdram -> table_k[9][inlet_tALKER[11]];
 };
 
 //////////////////////////////////////////////////
 // Pass-through other multiplexed outlet values //
 //////////////////////////////////////////////////
 
-outlet_tALKER[12] = inlet_tALKER[12];
-outlet_tALKER[13] = inlet_tALKER[13];
-outlet_tALKER[14] = inlet_tALKER[14];
-outlet_tALKER[15] = inlet_tALKER[15];
-
-///////////////////////
-// Pass through gate //
-///////////////////////
-
-outlet_gate = inlet_gate;
+outlet_TALKEr[12] = inlet_tALKER[12];
+outlet_TALKEr[13] = inlet_tALKER[13];
+outlet_TALKEr[14] = inlet_tALKER[14];
+outlet_TALKEr[15] = inlet_tALKER[15];
 
 /////////////////////
 // Update counters //
@@ -427,9 +441,9 @@ krate_counter++;
 
 // Increment interpolation counter
 if(krate_counter % interp_divisor == 0) {
-	interp_counter = (interp_counter <= 6) ? interp_counter + 1 : 7;
+	interp_counter = (interp_counter <= 7) ? interp_counter + 1 : 8;
 };
 
-//]]></code.krate>
+// END K-RATE]]></code.krate>
    </obj.normal>
 </objdefs>

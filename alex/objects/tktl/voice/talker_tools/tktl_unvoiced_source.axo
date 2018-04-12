@@ -1,0 +1,103 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="tktl unvoiced source" uuid="4466f754-3f24-4bbc-9f6a-c0ac30754f9f">
+      <sDescription>Talker Unvoiced Source oscillator.
+Part of the Talker Tools object set.</sDescription>
+      <author>toneburst</author>
+      <license>BSD</license>
+      <helpPatch>disp.axh</helpPatch>
+      <inlets>
+         <frac32.bipolar name="pitch" description="noise pitch (disabled if &apos;fixed&apos; parameter enabled)"/>
+      </inlets>
+      <outlets>
+         <frac32buffer.bipolar name="UNVOICED" description="lpc unvoiced source. Connect to tktl source mixer object"/>
+      </outlets>
+      <displays/>
+      <params>
+         <bool32.tgl name="fixed" description="fixed 8kHz pitch (setting &apos;on&apos; disables controls below and pitch inlet)"/>
+         <frac32.s.map.pitch name="pitch" description="axoloti standard note-pitch"/>
+      </params>
+      <attribs/>
+      <includes>
+         <include>./inc/./toneburst-utility-functions.h</include>
+      </includes>
+      <code.declaration><![CDATA[// START LOCAL DATA
+
+/*
+ * LPC unvoiced (noise) source oscillator.
+ * Adapted from Talkie library for Arduino by Peter Knight
+ * https://github.com/going-digital/Talkie
+ * 
+ * The code that started this whole project. Thank you, Peter!
+ * 
+ * toneburst/Team Talker 2018
+ */
+
+// Phase-counter
+int32_t osc_phase;
+// Cycle counter
+int8_t render_count;
+// Current output sample value
+int32_t sample;
+
+////////////////////////
+// LPC Noise Function //
+////////////////////////
+
+int32_t TkRenderUnvoiced() {
+	static int32_t unvoiced_source;
+	static int32_t synth_random = 1;
+	synth_random = (synth_random >> 1) ^ ((synth_random & 1) ? 0xB800 : 0);
+	// Output is half value of max value in chirp table (254) in original Talkie source
+	// Up-shifted to 27 bits here, but attenuated in Mixer object
+	unvoiced_source = (synth_random & 1) ? 128 << 20 : -(128 << 20);
+	return unvoiced_source;
+};
+
+// END LOCAL DATA]]></code.declaration>
+      <code.init><![CDATA[// START INIT
+
+LogTextMessage("\n///////////////////////////////////////////////");
+LogTextMessage("// Initialising Talker Tools Unvoiced Source //");
+LogTextMessage("///////////////////////////////////////////////\n");
+
+osc_phase = 0;
+render_count = 0;
+
+LogTextMessage("Done...");
+
+// END INIT]]></code.init>
+      <code.krate><![CDATA[// START K-RATE
+
+// Calculate phase-increment
+uint32_t freq;
+MTOFEXTENDED(param_pitch + inlet_pitch,freq);
+
+/////////////////
+// Render Loop //
+/////////////////
+
+// Loop through outlet buffer
+for(uint8_t j = 0; j < BUFSIZE; j++) {
+	// If 'fixed' bool set, render noise at fixed 8kHz
+	if(param_fixed) {
+		if(render_count == 0) {
+			sample = TkRenderUnvoiced();
+		}
+	// Else render noise sample once per phase cycle
+	} else {
+		if(osc_phase <= freq) {
+			// Update sample
+			sample = TkRenderUnvoiced();
+		}
+	}
+	// Increment phase-counter
+	osc_phase += freq;
+	// Incremement cycle counter
+	render_count = (render_count == 5) ? 0 : render_count + 1;
+	// Set noise output buffer at sample j
+	outlet_UNVOICED[j] = sample;
+}
+
+// END K-RATE]]></code.krate>
+   </obj.normal>
+</objdefs>
