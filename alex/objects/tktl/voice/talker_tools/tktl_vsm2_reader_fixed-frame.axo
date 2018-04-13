@@ -8,19 +8,22 @@
          <frac32.positive name="position"/>
       </inlets>
       <outlets>
-         <frac32buffer.positive name="tALKER"/>
+         <frac32buffer.positive name="tALKER" description="Talker Tools index connection (NOT AUDIO!)"/>
+         <bool32 name="gate"/>
+         <bool32.pulse name="wordend" description="word-end trigger"/>
          <frac32.positive name="random" description="random number"/>
       </outlets>
       <displays/>
       <params>
-         <int32 name="word">
+         <int32 name="word" description="word-select">
             <MinValue i="0"/>
             <MaxValue i="1023"/>
          </int32>
-         <frac32.u.map name="position"/>
-         <int32.hradio name="playmode">
+         <frac32.u.map name="position" description=""/>
+         <int32.hradio name="playmode" description="play-mode (normal | loop | ping-pong)">
             <MaxValue i="3"/>
          </int32.hradio>
+         <bool32.mom name="glitch"/>
          <bool32.mom name="debug"/>
       </params>
       <attribs>
@@ -64,6 +67,7 @@ uint32_t scrub_position;
 uint32_t scrub_position_old;
 
 // Counters
+uint32_t period;
 uint32_t cycle_counter;
 uint32_t frame_counter;
 
@@ -93,6 +97,10 @@ int8_t    direction;
 //bool      jump;*/
 bool      debug;
 
+/////////////
+// Structs //
+/////////////
+
 // Frame data struct
 struct LPCFixedFrame {
     uint8_t  energy;
@@ -115,8 +123,21 @@ struct LPCFixedFrame {
 } frame_data;
 
 
-// Parse fame data into individual vars
-void ParseFrameData(uint64_t data_in) {
+///////////////
+// Functions //
+///////////////
+
+void ParseFrameData(uint64_t data_in, bool glitch) {
+	// Populate frame_data struct with (unglitched) frame flags and random number
+	// (glitch this, too?)
+	frame_data.unvoiced = (data_in >> 14) & 0b1;
+	frame_data.rest     = (data_in >> 13) & 0b1;
+	frame_data.repeat   = (data_in >> 12) & 0b1;
+	frame_data.end      = (data_in >> 11) & 0b1;
+	frame_data.random   =  data_in        & 0b11111111111;
+	// Glitch LPC data if bool set true
+	if(glitch) data_in ^= 0b1001101000101011010001010101011001110011000101011011010111111011;
+	// Populate with LPC data
 	frame_data.energy   =  data_in >> 60;
 	frame_data.pitch    = (data_in >> 54) & 0b111111;
 	frame_data.k0       = (data_in >> 49) & 0b11111;
@@ -129,11 +150,7 @@ void ParseFrameData(uint64_t data_in) {
 	frame_data.k7       = (data_in >> 21) & 0b111;
 	frame_data.k8       = (data_in >> 18) & 0b111;
 	frame_data.k9       = (data_in >> 15) & 0b111;
-	frame_data.unvoiced = (data_in >> 14) & 0b1;
-	frame_data.rest     = (data_in >> 13) & 0b1;
-	frame_data.repeat   = (data_in >> 12) & 0b1;
-	frame_data.end      = (data_in >> 11) & 0b1;
-	frame_data.random   =  data_in        & 0b11111111111;
+	//frame_data.random   =  data_in        & 0b11111111111;
 };
 
 void LogFrameData() {
@@ -208,6 +225,7 @@ position                 = 0;
 scrub_position           = 0;
 scrub_position_old       = 0;
 
+period                   = 75;
 cycle_counter            = 0;
 frame_counter            = 0;
 
@@ -231,6 +249,9 @@ LogTextMessage("Done...");
 
 // Reset frame-increment trigger (to Tables)
 outlet_tALKER[12] = 0;
+
+// Reset word-end trigger outlet
+outlet_wordend = false;
 
 //////////
 // Gate //
@@ -256,25 +277,23 @@ gate = inlet_gate;
 word_index = Max16(param_word, (word_count -1) + inlet_word);
 
 if(word_index != word_index_old) {
-	
+	// Get meta for current word
 	ptr_vsm2_word_meta = ptr_vsm2_word_meta_start + word_index;
 	TktlDisplayWordMetaFF(attr_debug, word_index, ptr_vsm2_word_meta);
 
-	// Set pointer to word-start
+	// Set pointer to word-start by casting LPC entry-point from word meta to 64-bit pointer
 	ptr_word_start_sdram = (uint64_t *)(TktlShared::ptr_vsm2_sdram_ + ptr_vsm2_word_meta->lpc_entry_point);
 	
 	// Set frame pointer to word start
 	ptr_frame_sdram = ptr_word_start_sdram ;
-	
-	word_index_old = word_index;
 
+	// Update previous word-index
+	word_index_old = word_index;
+	
 	cycle_counter = 0;
 	frame_counter = 0;
 
-	// Parse new word first frame
-	//ParseFrameData(*ptr_frame_sdram, &frame_data);
-
-	// Send new frame-increment trigger to Tables
+	// Send new frame-increment trigger to Tables object
 	outlet_tALKER[12] = 1;
 };
 
@@ -291,39 +310,38 @@ if(scrub_position != scrub_position_old) {
 	//ptr_frame_sdram += scrub_position;
 };
 
+// Update previous position
+scrub_position_old = scrub_position;
+
 
 if((cycle_counter == 0) && (play)) {
-
-	if((frame_counter > 0) && (frame_counter < ptr_vsm2_word_meta->length)) {
-	
+	// Update frame data if conditions met
+	if((frame_counter > 0) && (frame_counter < ptr_vsm2_word_meta->length)) {	
 		// Parse new frame
-		ParseFrameData(*(ptr_word_start_sdram + frame_counter));
-			
-		// Increment frame-counter
+		ParseFrameData(*(ptr_word_start_sdram + frame_counter), param_glitch);			
+		// Increment/decrement frame-counter
 		if(direction == 1)
 			frame_counter++;
 		else if(direction == -1)
-			frame_counter--;
-		
+			frame_counter--;		
 		// Send new frame-increment trigger to Tables
 		outlet_tALKER[12] = 1;
-	
+			
 	// We're on the first frame
 	} else if (frame_counter == 0) {				
 		// Parse first frame
-		ParseFrameData(*(ptr_word_start_sdram + frame_counter));
+		ParseFrameData(*(ptr_word_start_sdram + frame_counter), param_glitch);
+		// Send new frame-increment trigger to Tables object
+		outlet_tALKER[12] = 1;
 		// Direction will always be forwards, if we're on the 1st frame
 		direction = 1;
 		// Increment frame-counter
 		frame_counter++;
-		
-	// We're at last frame
-	} else if(frame_counter == ptr_vsm2_word_meta->length) {
-			
+				
+	// We're past last frame
+	} else if(frame_counter == ptr_vsm2_word_meta->length) {					
 		// Loop mode
 		if(param_playmode == 1) {
-			// Parse last frame
-			//ParseFrameData(*(ptr_word_start_sdram + frame_counter));
 			// Reset frame counter to word start
 			frame_counter = 0;
 			// Direction will be forwards
@@ -336,16 +354,14 @@ if((cycle_counter == 0) && (play)) {
 			// Reverse to previous frame
 			frame_counter--;
 		};
+		
+		// Set trigger on 'wordend' outlet
+		outlet_wordend = true;
 	};
-
-	if(frame_data.end)
-		LogTextMessage("END!");
 };
 
-cycle_counter = (cycle_counter < 75) ? cycle_counter + 1 : 0;
-
-// Update previous position
-scrub_position_old = scrub_position;
+// Update k-rate cycle counter
+cycle_counter = (cycle_counter < period) ? cycle_counter + 1 : 0;
 
 //////////////////////////////
 // Handle Debug Rising Edge //
@@ -379,7 +395,7 @@ outlet_tALKER[10] = frame_data.k8;
 outlet_tALKER[11] = frame_data.k9;
 
 // Per-frame 11-bit random number
-outlet_random     = frame_data.random << 16;
+outlet_random     = frame_data.random << 14;
 
 // END K-RATE]]></code.krate>
    </obj.normal>
