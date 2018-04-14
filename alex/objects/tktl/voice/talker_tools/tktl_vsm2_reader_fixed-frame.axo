@@ -24,6 +24,7 @@
             <MaxValue i="3"/>
          </int32.hradio>
          <bool32.mom name="glitch"/>
+         <bool32.tgl name="scrub"/>
          <bool32.mom name="debug"/>
       </params>
       <attribs>
@@ -300,68 +301,78 @@ if(word_index != word_index_old) {
 //////////////////
 // Handle scrub //
 //////////////////
-
+		
 // Calculate new scrub-position
 scrub_position = ScaleU32(__USAT(param_position + inlet_position, 27), ptr_vsm2_word_meta->length);
 
-if(scrub_position != scrub_position_old) {
-	
-	// Increment pointer to new position
-	//ptr_frame_sdram += scrub_position;
-};
-
 // Update previous position
-scrub_position_old = scrub_position;
+//scrub_position_old = scrub_position;
 
-
-if((cycle_counter == 0) && (play)) {
-	// Update frame data if conditions met
-	if((frame_counter > 0) && (frame_counter < ptr_vsm2_word_meta->length)) {	
-		// Parse new frame
-		ParseFrameData(*(ptr_word_start_sdram + frame_counter), param_glitch);			
-		// Increment/decrement frame-counter
-		if(direction == 1)
-			frame_counter++;
-		else if(direction == -1)
-			frame_counter--;		
-		// Send new frame-increment trigger to Tables
-		outlet_tALKER[12] = 1;
-			
-	// We're on the first frame
-	} else if (frame_counter == 0) {				
-		// Parse first frame
-		ParseFrameData(*(ptr_word_start_sdram + frame_counter), param_glitch);
+if(param_scrub) {
+	if(cycle_counter == 0) {
+		// Parse frame data
+		ParseFrameData(*(ptr_word_start_sdram + scrub_position), param_glitch);
 		// Send new frame-increment trigger to Tables object
 		outlet_tALKER[12] = 1;
-		// Direction will always be forwards, if we're on the 1st frame
-		direction = 1;
-		// Increment frame-counter
-		frame_counter++;
-				
-	// We're past last frame
-	} else if(frame_counter == ptr_vsm2_word_meta->length) {					
-		// Loop mode
-		if(param_playmode == 1) {
-			// Reset frame counter to word start
-			frame_counter = 0;
-			// Direction will be forwards
-			direction = 1;
-		
-		// Pingpong mode
-		} else if(param_playmode == 2) {
-			// Reverse direction
-			direction = -1;
-			// Reverse to previous frame
-			frame_counter--;
-		};
-		
-		// Set trigger on 'wordend' outlet
-		outlet_wordend = true;
 	};
-};
 
-// Update k-rate cycle counter
-cycle_counter = (cycle_counter < period) ? cycle_counter + 1 : 0;
+	// Fixed cycle-counter period
+	cycle_counter = (cycle_counter < 32) ? cycle_counter + 1 : 0;
+
+	//outlet_gate = true;
+	
+} else {
+	
+	if((cycle_counter == 0) && (play)) {
+	
+		// Update frame data if conditions met
+		if((frame_counter > 0) && (frame_counter < ptr_vsm2_word_meta->length)) {	
+			// Parse new frame
+			ParseFrameData(*(ptr_word_start_sdram + frame_counter), param_glitch);			
+			// Increment/decrement frame-counter
+			if(direction == 1)
+				frame_counter++;
+			else if(direction == -1)
+				frame_counter--;		
+			// Send new frame-increment trigger to Tables
+			outlet_tALKER[12] = 1;
+			
+		// We're on the first frame
+		} else if (frame_counter == 0) {				
+			// Parse first frame
+			ParseFrameData(*(ptr_word_start_sdram + frame_counter), param_glitch);
+			// Send new frame-increment trigger to Tables object
+			outlet_tALKER[12] = 1;
+			// Direction will always be forwards, if we're on the 1st frame
+			direction = 1;
+			// Increment frame-counter
+			frame_counter++;
+				
+		// We're past last frame
+		} else if(frame_counter == ptr_vsm2_word_meta->length) {					
+			// Loop mode
+			if(param_playmode == 1) {
+				// Reset frame counter to word start
+				frame_counter = 0;
+				// Direction will be forwards
+				direction = 1;
+		
+			// Pingpong mode
+			} else if(param_playmode == 2) {
+				// Reverse direction
+				direction = -1;
+				// Reverse to previous frame
+				frame_counter--;
+			};
+		
+			// Set trigger on 'wordend' outlet
+			outlet_wordend = true;
+		};
+	};
+
+	// Update k-rate cycle counter
+	cycle_counter = (cycle_counter < period) ? cycle_counter + 1 : 0;
+};
 
 //////////////////////////////
 // Handle Debug Rising Edge //
@@ -395,7 +406,9 @@ outlet_tALKER[10] = frame_data.k8;
 outlet_tALKER[11] = frame_data.k9;
 
 // Per-frame 11-bit random number
-outlet_random     = frame_data.random << 14;
+outlet_random = frame_data.random << 14;
+
+outlet_gate = (inlet_gate);
 
 // END K-RATE]]></code.krate>
    </obj.normal>

@@ -13,9 +13,19 @@
       </params>
       <attribs/>
    </obj>
+   <obj type="timer/pulselength" uuid="ca68725237d8ba8407773340801660a9fd9b0dba" name="pulselength_1" x="630" y="98">
+      <params>
+         <frac32.s.map name="delay" value="16.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="word-end" x="742" y="98">
+      <params/>
+      <attribs/>
+   </obj>
    <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1176" y="140">
       <params>
-         <frac32.u.map name="value" value="41.5"/>
+         <frac32.u.map name="value" value="64.0"/>
       </params>
       <attribs/>
    </obj>
@@ -30,7 +40,7 @@
    <obj type="tktl/voice/talker_tools/tktl loader vsm2" uuid="37f03a79-ba9e-44af-957e-28f486587b54" name="tktl_2" x="182" y="182">
       <params/>
       <attribs>
-         <file attributeName="rom" file="ROMs/uk_special_flippedROM.vsm2"/>
+         <file attributeName="rom" file="ROMs/talkieROMfixed13bit.vsm2"/>
          <combo attributeName="debug" selection="on"/>
       </attribs>
    </obj>
@@ -54,7 +64,7 @@
       <params>
          <bool32.tgl name="glide" value="0"/>
          <frac32.u.map name="glideamt" value="29.0"/>
-         <frac32.s.map name="formant" MidiCC="3" value="0.0"/>
+         <frac32.s.map name="formant" value="-17.0"/>
          <bool32.tgl name="interp" value="0"/>
       </params>
       <attribs/>
@@ -65,11 +75,12 @@
    </obj>
    <obj type="tktl/voice/talker_tools/tktl vsm2 reader fixed-frame" uuid="5b7b2cac-7bb5-48da-a563-82cb6c1da0b8" name="tktl_1" x="182" y="266">
       <params>
-         <int32 name="word" value="43"/>
-         <frac32.u.map name="position" MidiCC="2" value="0.0"/>
-         <bool32.tgl name="loop" value="0"/>
+         <int32 name="word" value="251"/>
+         <frac32.u.map name="position" MidiCC="2" value="39.5"/>
+         <int32.hradio name="playmode" value="0"/>
+         <bool32.mom name="glitch" value="0"/>
+         <bool32.tgl name="scrub" value="1"/>
          <bool32.mom name="debug" value="0"/>
-         <int32.hradio name="playmode" value="2"/>
       </params>
       <attribs>
          <combo attributeName="debug" selection="on"/>
@@ -77,7 +88,7 @@
    </obj>
    <obj type="tktl/voice/talker_tools/tktl tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="tktl_4" x="448" y="266">
       <params>
-         <int32 name="tables" value="1"/>
+         <int32 name="tables" value="0"/>
          <bool32.tgl name="interpolation" value="1"/>
       </params>
       <attribs>
@@ -151,14 +162,14 @@ disp_k9     = inlet_TALKER[11] << 23;
    <nets>
       <net>
          <source obj="tktl_1" outlet="tALKER"/>
-         <dest obj="tktl_4" inlet="tALKER"/>
          <dest obj="hex_10" inlet="TALKER"/>
+         <dest obj="tktl_4" inlet="tALKER"/>
       </net>
       <net>
          <source obj="tktl_4" outlet="TALKEr"/>
-         <dest obj="tktl_6" inlet="TALKEr"/>
          <dest obj="tktl_7" inlet="TALKEr"/>
          <dest obj="tktl_3" inlet="TALKEr"/>
+         <dest obj="tktl_6" inlet="TALKEr"/>
       </net>
       <net>
          <source obj="tktl_6" outlet="VOICED"/>
@@ -195,12 +206,23 @@ disp_k9     = inlet_TALKER[11] << 23;
       </net>
       <net>
          <source obj="keyb_1" outlet="gate"/>
-         <dest obj="ahd_1" inlet="trig"/>
          <dest obj="tktl_1" inlet="gate"/>
       </net>
       <net>
          <source obj="keyb_1" outlet="note"/>
          <dest obj="tktl_6" inlet="note"/>
+      </net>
+      <net>
+         <source obj="pulselength_1" outlet="pulse"/>
+         <dest obj="word-end" inlet="in"/>
+      </net>
+      <net>
+         <source obj="tktl_1" outlet="wordend"/>
+         <dest obj="pulselength_1" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="tktl_1" outlet="gate"/>
+         <dest obj="ahd_1" inlet="trig"/>
       </net>
    </nets>
    <settings>

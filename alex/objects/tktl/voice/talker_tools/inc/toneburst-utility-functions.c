@@ -43,24 +43,14 @@ __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Clamp32(int32_t val,
 	return (val <= min) ? min : (val >= max) ? max : val;
 };
 
-// Scale positive input to range out_min > out_max (doesn't work with signed ints?)
+// Scale positive input to range out_min > out_max. Extracted from community:rbrt/math/scale by Robert Schirmer
 __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(uint32_t val, uint32_t out_min, uint32_t out_max) {
-	// Convert input vals to float
-	float x = (float)val;
-	float outMin = (float)out_min;
-	float outMax = (float)out_max;
-	// Return val in correct 27-bit integer range
-	return (int32_t)(x * (outMax - outMin) / 0x07FFFFFF + outMin);
+	return (___SMMUL(((out_max - out_min) >> 1), val) << 6) + out_min;
 };
 
 // Scale input to 0 > out_max range
 __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t ScaleU32(int32_t val, int32_t out_max) {
 	return (val * out_max / 0x07FFFFFF);
-};
-
-// Map value between min and max. Rewritten by lokki
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(int64_t val, int32_t out_min, int32_t out_max) {
-	return (((val * (out_max - out_min)) / 0x07FFFFFF) + out_min);
 };
 
 // Map value float (0.0f to 1.0f range) between min and max. 
@@ -86,11 +76,11 @@ __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t CurveExp32(int32_t v
 
 // 16-bit xfade
 // (adapted from Factory xfade object)
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int16_t Xfade16(int16_t a, int16_t b, uint16_t x) {
-	int16_t ccompl = (1 << 15) - x;
-	int32_t result = (int32_t)b * x;
-	result += (int32_t)a * ccompl;
-	return result >> 16;
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t Xfade16(int16_t a, int16_t b, uint32_t x) {
+    int32_t ccompl = (1 << 16) - x;
+    int32_t result = (int32_t)b * x;
+    result += (int32_t)a * ccompl;
+    return result >> 16;
 };
 
 // 27-bit xfade
