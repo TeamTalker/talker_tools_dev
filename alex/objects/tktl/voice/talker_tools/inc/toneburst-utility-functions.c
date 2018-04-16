@@ -48,9 +48,9 @@ __attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t MapU32(uint32_t val,
 	return (___SMMUL(((out_max - out_min) >> 1), val) << 6) + out_min;
 };
 
-// Scale input to 0 > out_max range
-__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t ScaleU32(int32_t val, int32_t out_max) {
-	return (val * out_max / 0x07FFFFFF);
+// Scale input to 0 > out_max range *rewritten (again) by lokki
+__attribute__ ( ( always_inline ) ) __STATIC_INLINE int32_t ScaleU32(int64_t val, int32_t out_max) {
+  return (val * out_max / 0x07FFFFFF);
 };
 
 // Map value float (0.0f to 1.0f range) between min and max. 

@@ -66,6 +66,7 @@ uint32_t position;
 uint32_t position_old;
 uint32_t scrub_position;
 uint32_t scrub_position_old;
+uint32_t interp_scrub;
 
 // Counters
 uint32_t period;
@@ -133,25 +134,43 @@ void ParseFrameData(uint64_t data_in, bool glitch) {
 	// (glitch this, too?)
 	frame_data.unvoiced = (data_in >> 14) & 0b1;
 	frame_data.rest     = (data_in >> 13) & 0b1;
-	frame_data.repeat   = (data_in >> 12) & 0b1;
-	frame_data.end      = (data_in >> 11) & 0b1;
-	frame_data.random   =  data_in        & 0b11111111111;
+	frame_data.random   =  data_in        & 0b1111111111111;
 	// Glitch LPC data if bool set true
 	if(glitch) data_in ^= 0b1001101000101011010001010101011001110011000101011011010111111011;
 	// Populate with LPC data
-	frame_data.energy   =  data_in >> 60;
-	frame_data.pitch    = (data_in >> 54) & 0b111111;
-	frame_data.k0       = (data_in >> 49) & 0b11111;
-	frame_data.k1       = (data_in >> 44) & 0b11111;
-	frame_data.k2       = (data_in >> 40) & 0b1111;
-	frame_data.k3       = (data_in >> 36) & 0b1111;
-	frame_data.k4       = (data_in >> 32) & 0b1111;
-	frame_data.k5       = (data_in >> 28) & 0b1111;
-	frame_data.k6       = (data_in >> 24) & 0b1111;
-	frame_data.k7       = (data_in >> 21) & 0b111;
-	frame_data.k8       = (data_in >> 18) & 0b111;
-	frame_data.k9       = (data_in >> 15) & 0b111;
-	//frame_data.random   =  data_in        & 0b11111111111;
+	frame_data.energy   =  (data_in >> 60) << 4;
+	frame_data.pitch    =  (data_in >> 54) & 0b111111;
+	frame_data.k0       = ((data_in >> 49) & 0b11111) << 3;
+	frame_data.k1       = ((data_in >> 44) & 0b11111) << 3;
+	frame_data.k2       = ((data_in >> 40) & 0b1111)  << 4;
+	frame_data.k3       = ((data_in >> 36) & 0b1111)  << 4;
+	frame_data.k4       = ((data_in >> 32) & 0b1111)  << 4;
+	frame_data.k5       = ((data_in >> 28) & 0b1111)  << 4;
+	frame_data.k6       = ((data_in >> 24) & 0b1111)  << 4;
+	frame_data.k7       = ((data_in >> 21) & 0b111)   << 5;
+	frame_data.k8       = ((data_in >> 18) & 0b111)   << 5;
+	frame_data.k9       = ((data_in >> 15) & 0b111)   << 5;
+};
+
+void ParseFrameDataScrub(uint64_t data_in, uint64_t next_data_in, uint8_t interp_pos) {
+	// Populate frame_data struct with (unglitched) frame flags and random number
+	// (glitch this, too?)
+	frame_data.unvoiced = (data_in >> 14) & 0b1;
+	frame_data.rest     = (data_in >> 13) & 0b1;
+	frame_data.random   =  data_in        & 0b1111111111111;
+	// Populate with LPC data
+	frame_data.energy   =  ((data_in >> 60) << 4);
+	frame_data.pitch    =   (data_in >> 54)   & 0b111111;
+	frame_data.k0       = (((data_in >> 49) & 0b11111)<<3) + (((next_data_in >> 49) & 0b11111) - ((data_in >> 49) & 0b11111)) * interp_pos;
+	frame_data.k1       = (((data_in >> 44) & 0b11111)<<3) + (((next_data_in >> 44) & 0b11111) - ((data_in >> 44) & 0b11111)) * interp_pos;
+	frame_data.k2       = (((data_in >> 40) & 0b1111)<<4) 	+ (((next_data_in >> 40) & 0b1111)  - ((data_in >> 40) & 0b1111))  * interp_pos;
+	frame_data.k3       = (((data_in >> 36) & 0b1111)<<4) 	+ (((next_data_in >> 36) & 0b1111)  - ((data_in >> 36) & 0b1111))  * interp_pos;
+	frame_data.k4       = (((data_in >> 32) & 0b1111)<<4) 	+ (((next_data_in >> 32) & 0b1111)  - ((data_in >> 32) & 0b1111))  * interp_pos;
+	frame_data.k5       = (((data_in >> 28) & 0b1111)<<4) 	+ (((next_data_in >> 28) & 0b1111)  - ((data_in >> 28) & 0b1111))  * interp_pos;
+	frame_data.k6       = (((data_in >> 24) & 0b1111)<<4) 	+ (((next_data_in >> 24) & 0b1111)  - ((data_in >> 24) & 0b1111))  * interp_pos;
+	frame_data.k7       = (((data_in >> 21) & 0b111)<<5)	+ (((next_data_in >> 21) & 0b111)   - ((data_in >> 21) & 0b111))   * interp_pos;
+	frame_data.k8       = (((data_in >> 18) & 0b111)<<5)   + (((next_data_in >> 18) & 0b111)   - ((data_in >> 18) & 0b111))   * interp_pos;
+	frame_data.k9       = (((data_in >> 15) & 0b111)<<5)   + (((next_data_in >> 15) & 0b111)   - ((data_in >> 15) & 0b111))   * interp_pos;
 };
 
 void LogFrameData() {
@@ -225,6 +244,7 @@ word_index_old           = 1023;
 position                 = 0;
 scrub_position           = 0;
 scrub_position_old       = 0;
+interp_scrub             = 0;
 
 period                   = 75;
 cycle_counter            = 0;
@@ -303,28 +323,21 @@ if(word_index != word_index_old) {
 //////////////////
 		
 // Calculate new scrub-position
-scrub_position = ScaleU32(__USAT(param_position + inlet_position, 27), ptr_vsm2_word_meta->length);
+scrub_position = ScaleU32(__USAT(param_position + inlet_position, 27),  ptr_vsm2_word_meta->length);
+interp_scrub   = ScaleU32(__USAT(param_position + inlet_position, 27), (ptr_vsm2_word_meta->length) << 3) & 0b111;
 
-// Update previous position
-//scrub_position_old = scrub_position;
-
+// If scrubbing enabled
 if(param_scrub) {
 	if(cycle_counter == 0) {
 		// Parse frame data
-		ParseFrameData(*(ptr_word_start_sdram + scrub_position), param_glitch);
+		ParseFrameDataScrub(*(ptr_word_start_sdram + scrub_position - 1), *(ptr_word_start_sdram + scrub_position), interp_scrub);
 		// Send new frame-increment trigger to Tables object
-		outlet_tALKER[12] = 1;
 	};
-
-	// Fixed cycle-counter period
-	cycle_counter = (cycle_counter < 32) ? cycle_counter + 1 : 0;
-
-	//outlet_gate = true;
-	
+	// Update k-rate cycle counter
+	cycle_counter = (cycle_counter < 8) ? cycle_counter + 1 : 0;
 } else {
 	
-	if((cycle_counter == 0) && (play)) {
-	
+	if((cycle_counter == 0) && (play)) {	
 		// Update frame data if conditions met
 		if((frame_counter > 0) && (frame_counter < ptr_vsm2_word_meta->length)) {	
 			// Parse new frame
@@ -335,8 +348,7 @@ if(param_scrub) {
 			else if(direction == -1)
 				frame_counter--;		
 			// Send new frame-increment trigger to Tables
-			outlet_tALKER[12] = 1;
-			
+			outlet_tALKER[12] = 1;			
 		// We're on the first frame
 		} else if (frame_counter == 0) {				
 			// Parse first frame
@@ -346,25 +358,25 @@ if(param_scrub) {
 			// Direction will always be forwards, if we're on the 1st frame
 			direction = 1;
 			// Increment frame-counter
-			frame_counter++;
-				
+			frame_counter++;				
 		// We're past last frame
-		} else if(frame_counter == ptr_vsm2_word_meta->length) {					
+		} else if(frame_counter == ptr_vsm2_word_meta->length) {								
+			if(param_playmode == 0) {
+				// Mute output on word-end
+				frame_data.energy = 0;			
 			// Loop mode
-			if(param_playmode == 1) {
+			} else if(param_playmode == 1) {
 				// Reset frame counter to word start
 				frame_counter = 0;
 				// Direction will be forwards
-				direction = 1;
-		
+				direction = 1;		
 			// Pingpong mode
 			} else if(param_playmode == 2) {
 				// Reverse direction
 				direction = -1;
 				// Reverse to previous frame
 				frame_counter--;
-			};
-		
+			};		
 			// Set trigger on 'wordend' outlet
 			outlet_wordend = true;
 		};

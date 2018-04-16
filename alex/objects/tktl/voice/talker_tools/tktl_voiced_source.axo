@@ -188,6 +188,7 @@ if(!TktlShared::ptr_lpc_chirp_tables_sdram_) {
 	// Check return of file-loader function
 	if(load_status != 0) {
 		LogTextMessage("ERROR: File-loader failed to load CHIRP data file to SDRAM, exiting");
+		disable = true;
 		return;
 	};
 } else {
@@ -232,6 +233,10 @@ LogTextMessage("Done...");
 
 // END INIT]]></code.init>
       <code.krate><![CDATA[// START K-RATE
+
+// Return early if tables failed to load or Bad Things happen...
+if(disable)
+	return;
 
 ////////////////////////
 // Handle change WAVE //
