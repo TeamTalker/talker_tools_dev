@@ -31,7 +31,7 @@ Part of the Talker Tools object set.</sDescription>
          </combo>
       </attribs>
       <file-depends>
-         <file-depend localFilename="data/lpc_tables.raw" targetPath="/shared/lpc/lpc_tables.raw"/>
+         <file-depend localFilename="./data/lpc_tables.raw" targetPath="/shared/tktl/talker_tools/lpc_tables.raw"/>
       </file-depends>
       <includes>
          <include>./inc/file_io.h</include>
@@ -58,6 +58,7 @@ Part of the Talker Tools object set.</sDescription>
 // Object vars //
 /////////////////
 
+bool disable;
 bool multiple_instance;
 uint8_t load_status;
 uint8_t tables;
@@ -134,6 +135,9 @@ void DisplayTablesInfo(LpcTables *tables, bool verbose) {
 	};
 };
 
+// Other functions in include file
+// ./inc/toneburst_utility_funcitons.h
+
 // END LOCAL DATA]]></code.declaration>
       <code.init><![CDATA[// START INIT
 
@@ -149,6 +153,7 @@ if(attr_debug)
 // Frame vars //
 ////////////////
 
+disable             = false;
 multiple_instance	= false;
 load_status		= 0;
 tables 			= TktlShared::vsm2_lpc_tables_id_;
@@ -192,6 +197,7 @@ if(!TktlShared::ptr_lpc_coef_tables_sdram_) {
 	// Check return of file-loader function
 	if(load_status != 0) {
 		LogTextMessage("ERROR: File-loader failed to load file to SDRAM, exiting");
+		disable = true;
 		return;
 	};
 } else {
@@ -207,6 +213,10 @@ LogTextMessage("Done...");
 
 // END INIT]]></code.init>
       <code.krate><![CDATA[// START K-RATE
+
+// Return early if tables failed to load or Bad Things happen...
+if(disable)
+	return;
 
 /////////////////////
 // Set table index //
@@ -406,21 +416,22 @@ if((param_interpolation) && (frame_trigger <= 1)) {
 // Interpolation turned OFF //
 //////////////////////////////
 
-// Set outlet values directly from inlets
+// Set outlet values from inlets, using custom interpolation
+// Interpolation scheme by lokki
+// Doesn't implement interpolation-inhibit rules
 } else {
-
-	outlet_TALKEr[0]  =  ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0]];
+	outlet_TALKEr[0]  =  ptr_lpc_tables_sdram -> table_energy[inlet_tALKER[0] >> 4];
 	outlet_TALKEr[1]  =  ptr_lpc_tables_sdram -> table_pitch[inlet_tALKER[1]];
-	outlet_TALKEr[2]  =  ptr_lpc_tables_sdram -> table_k[0][inlet_tALKER[2]];
-	outlet_TALKEr[3]  =  ptr_lpc_tables_sdram -> table_k[1][inlet_tALKER[3]];
-	outlet_TALKEr[4]  =  ptr_lpc_tables_sdram -> table_k[2][inlet_tALKER[5]];
-	outlet_TALKEr[5]  =  ptr_lpc_tables_sdram -> table_k[3][inlet_tALKER[5]];
-	outlet_TALKEr[6]  =  ptr_lpc_tables_sdram -> table_k[4][inlet_tALKER[6]];
-	outlet_TALKEr[7]  =  ptr_lpc_tables_sdram -> table_k[5][inlet_tALKER[7]];
-	outlet_TALKEr[8]  =  ptr_lpc_tables_sdram -> table_k[6][inlet_tALKER[8]];
-	outlet_TALKEr[9]  =  ptr_lpc_tables_sdram -> table_k[7][inlet_tALKER[9]];
-	outlet_TALKEr[10] =  ptr_lpc_tables_sdram -> table_k[8][inlet_tALKER[10]];
-	outlet_TALKEr[11] =  ptr_lpc_tables_sdram -> table_k[9][inlet_tALKER[11]];
+	outlet_TALKEr[2]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[0][inlet_tALKER[2]  >> 3]), (ptr_lpc_tables_sdram -> table_k[0][(inlet_tALKER[2]  >> 3) - 1]), (inlet_tALKER[2]  & 0b111));
+	outlet_TALKEr[3]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[1][inlet_tALKER[3]  >> 3]), (ptr_lpc_tables_sdram -> table_k[1][(inlet_tALKER[3]  >> 3) - 1]), (inlet_tALKER[3]  & 0b111));
+	outlet_TALKEr[4]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[2][inlet_tALKER[4]  >> 4]), (ptr_lpc_tables_sdram -> table_k[2][(inlet_tALKER[4]  >> 3) - 1]), (inlet_tALKER[4]  & 0b111));
+	outlet_TALKEr[5]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[3][inlet_tALKER[5]  >> 3]), (ptr_lpc_tables_sdram -> table_k[3][(inlet_tALKER[5]  >> 3) - 1]), (inlet_tALKER[5]  & 0b111));
+	outlet_TALKEr[6]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[4][inlet_tALKER[6]  >> 3]), (ptr_lpc_tables_sdram -> table_k[4][(inlet_tALKER[6]  >> 3) - 1]), (inlet_tALKER[6]  & 0b111));
+	outlet_TALKEr[7]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[5][inlet_tALKER[7]  >> 3]), (ptr_lpc_tables_sdram -> table_k[5][(inlet_tALKER[7]  >> 3) - 1]), (inlet_tALKER[7]  & 0b111));
+	outlet_TALKEr[8]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[6][inlet_tALKER[8]  >> 3]), (ptr_lpc_tables_sdram -> table_k[6][(inlet_tALKER[8]  >> 3) - 1]), (inlet_tALKER[8]  & 0b111));
+	outlet_TALKEr[9]  =  Xfade16((ptr_lpc_tables_sdram -> table_k[7][inlet_tALKER[9]  >> 3]), (ptr_lpc_tables_sdram -> table_k[7][(inlet_tALKER[9]  >> 3) - 1]), (inlet_tALKER[9]  & 0b111));
+	outlet_TALKEr[10] =  Xfade16((ptr_lpc_tables_sdram -> table_k[8][inlet_tALKER[10] >> 3]), (ptr_lpc_tables_sdram -> table_k[8][(inlet_tALKER[10] >> 3) - 1]), (inlet_tALKER[10] & 0b111));
+	outlet_TALKEr[11] =  Xfade16((ptr_lpc_tables_sdram -> table_k[9][inlet_tALKER[11] >> 3]), (ptr_lpc_tables_sdram -> table_k[9][(inlet_tALKER[11] >> 3) - 1]), (inlet_tALKER[11] & 0b111));
 };
 
 //////////////////////////////////////////////////
