@@ -9,7 +9,6 @@ Part of the Talker Tools object set.</sDescription>
          <frac32buffer.bipolar name="EXCITATION" description="input from voiced/unvoiced source mixer"/>
          <bool32.risingfalling name="glide" description="apply glide to filter bands"/>
          <bool32 name="glideamt" description="glide rate (fast to slow)"/>
-         <frac32 name="srate" description="srate"/>
          <frac32.bipolar name="formant" description="formant-shift"/>
       </inlets>
       <outlets>
@@ -19,7 +18,6 @@ Part of the Talker Tools object set.</sDescription>
       <params>
          <bool32.tgl name="glide" description="glide on/off"/>
          <frac32.u.map name="glideamt" description="glide rate (fast to slow)"/>
-         <frac32.s.map name="formant" description="formant-shift"/>
          <bool32.tgl name="interp"/>
       </params>
       <attribs/>
@@ -46,9 +44,6 @@ Part of the Talker Tools object set.</sDescription>
 uint32_t glide_rate;
 int32_t k_glide_state[10];
 
-int32_t formant;
-int32_t formant_old;
-
 //float clock_phase;
 uint32_t clock_phase;
 //float sample_rate;
@@ -56,8 +51,11 @@ uint32_t sample_rate;
 uint8_t sample_rate_index;
 
 // 27-bit sample-rate lookup table
-// +- 1 octave, centered on 8kHz (0.16667 of 48kHz S-Rate)
-const uint16_t rate_table_int[25] = {
+// +- 16 semitones, centered on 8kHz (0.16667 of 48kHz S-Rate)
+const uint16_t rate_table_int[32] = {
+	4592,
+	4865,
+	5155,
 	5461,
 	5786,
 	6130,
@@ -82,7 +80,11 @@ const uint16_t rate_table_int[25] = {
 	18370,
 	19462,
 	20619,
-	21845
+	21845,
+	23144,
+	24521,
+	25979,
+	27523,
 };
 
 // Current/next samples
@@ -117,9 +119,9 @@ int32_t excitation = 0;
 
 static int32_t lpc_matrix_multiply(int32_t a, int32_t b) {
 	int32_t result;
-	while (a > 511) { a -= 1024; }
-	while (a < -512) { a += 1024; }
-	while (b > 16383) { b -= 32768; }
+	while (a > 511)    { a -= 1024; }
+	while (a < -512)   { a += 1024; }
+	while (b > 16383)  { b -= 32768; }
 	while (b < -16384) { b += 32768; }
 	result = ((a * b) >> 9); /** TODO: this isn't technically right to the chip, which truncates the lowest result bit, but it causes glitches otherwise. **/
 	return result;
@@ -165,24 +167,18 @@ int32_t lpc_lattice_filter(int32_t excitation) {
 	m_x[0] = m_u[0];
 
 	// Return final results
-	return __SSAT(m_u[0] << 2, 16);
+	return m_u[0] << 2;
 };
 
 ///////////////
 // Functions //
 ///////////////
 
-/*int32_t Xfade16(int16_t a, int16_t b, uint32_t x) {
-	int32_t ccompl = (1 << 15) - x;
-	int32_t result = (int32_t)b * x;
-	result += (int32_t)a * ccompl;
-	return result >> 16;
-};*/
-
 /*
 ScaleU32()
 MapU32()
 Slew32()
+Xfade16()
 
 functions moved to include file at
 /inc/toneburst-utility-functions.h
@@ -206,10 +202,6 @@ LogTextMessage("//////////////////////////////////////////\n");
 clock_phase       = 0;
 sample_rate       = 10923;//0.16667f;
 sample_rate_index = 12;
-
-// Formant setting vars
-formant           = 0;
-formant_old       = 0;
 
 // LPC state
 m_current_k[10]   = {0};
@@ -236,25 +228,11 @@ LogTextMessage("Done...");
 // Process Controls //
 //////////////////////
 
-
-//outlet_o= (inlet_i>>1)+(1<<26);
 // Glide-rate
 glide_rate = (param_glide || inlet_glide) ? __USAT(param_glideamt + inlet_glideamt, 27) : 0;
 
-// Formant value
-formant = (__SSAT(param_formant + inlet_formant, 27) >> 1) + (1 << 26);
-
-
-if(formant != formant_old) {
-	sample_rate_index  = ScaleU32(formant, 24);
-
-	// Write sample-rate table index value to shared object so Voiced Source can read it
-	// to extract offset value from it's own pitch-offset lookup table
-	TktlShared::filter_pitch_offset_ = sample_rate_index;
-	
-	sample_rate = rate_table_int[sample_rate_index];
-};
-formant_old = formant;
+// Sample-rate index from Formant inlet
+sample_rate = rate_table_int[(inlet_formant + (1 << 27)) >> 23];
 
 ///////////////////////
 // Grab inlet values //

@@ -10,6 +10,7 @@ Part of the Talker Tools object set.</sDescription>
          <frac32.bipolar name="note" description="axoloti standard pitch"/>
          <bool32 name="glide" description="glide on/off"/>
          <frac32.positive name="glideamt" description="glide amount"/>
+         <frac32.bipolar name="formant"/>
       </inlets>
       <outlets>
          <frac32buffer.bipolar name="VOICED" description="lpc voiced source. Connect to tktl source mixer object."/>
@@ -76,6 +77,7 @@ uint8_t tables;
 
 int32_t  pitch;
 int32_t  *pitch_slewstate;
+int32_t  formant_offset;
 uint32_t phase_increment;
 int32_t  phase_accumulator;
 int32_t  phase_accumulator_old;
@@ -83,7 +85,11 @@ uint32_t table_counter;
 int32_t  glide;
 
 // Pitch-offset lookup table to compensate for formant-shifting applied in the filter object
-const int32_t pitch_offset_table[25] = {
+const int32_t pitch_offset_table[32] = {
+	33554432,
+	31457280,
+	29360128,
+	27262976,
 	25165824,
 	23068672,
 	20971520,
@@ -108,7 +114,10 @@ const int32_t pitch_offset_table[25] = {
 	-18874368,
 	-20971520,
 	-23068672,
-	-25165824
+	-25165824,
+	-27262976,
+	-29360128,
+	-31457280,
 };
 
 // CHIRP table index
@@ -165,6 +174,7 @@ load_status           = 1;
 // Pitch vars
 pitch                 = 0;
 pitch_slewstate       = 0;
+formant_offset        = 0;
 phase_increment       = 0;
 phase_accumulator     = 0;
 phase_accumulator_old = 0;
@@ -281,8 +291,15 @@ glide = (param_glide || inlet_glide) ? __USAT(param_glideamt + inlet_glideamt, 2
 // Slew function in includefile ./inc/toneburst-utility-functions.h
 pitch = Slew32(pitch, pitch_slewstate, glide, param_glide);
 
-// Apply offset set by filter 
-pitch += pitch_offset_table[TktlShared::filter_pitch_offset_];
+///////////////////
+// Apply FORMANT //
+///////////////////
+
+// Pitch-offset to compensate for LPC Filters object
+// sample-rate change
+
+formant_offset = (inlet_formant + (1 << 27)) >> 23;
+pitch += pitch_offset_table[formant_offset];
 
 /////////////////////////
 // Set phase-increment //

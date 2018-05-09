@@ -1,50 +1,63 @@
 <patch-1.0 appVersion="1.0.12">
-   <obj type="audio/outconfig" uuid="eace67e3304afaa1bb695b444e9345f2d8adaf00" name="outconfig_1" x="1330" y="70">
+   <obj type="audio/outconfig" uuid="eace67e3304afaa1bb695b444e9345f2d8adaf00" name="outconfig_1" x="1414" y="56">
       <params/>
       <attribs>
          <combo attributeName="headphones" selection="-6dB"/>
          <combo attributeName="mode" selection="Stereo"/>
       </attribs>
    </obj>
-   <obj type="env/ahd lin m" uuid="f9b46834ce96425064b4ed7f53ad8b91ea1ac0ef" name="ahd_1" x="1064" y="84">
+   <obj type="env/ahd lin m" uuid="f9b46834ce96425064b4ed7f53ad8b91ea1ac0ef" name="ahd_1" x="1148" y="70">
       <params>
          <frac32.s.map name="a" value="-64.0"/>
-         <frac32.s.map name="d" value="-25.0"/>
+         <frac32.s.map name="d" value="-45.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="timer/pulselength" uuid="ca68725237d8ba8407773340801660a9fd9b0dba" name="pulselength_1" x="630" y="98">
+   <obj type="timer/pulselength" uuid="ca68725237d8ba8407773340801660a9fd9b0dba" name="pulselength_1" x="714" y="84">
       <params>
          <frac32.s.map name="delay" value="16.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="word-end" x="742" y="98">
+   <obj type="disp/bool" uuid="a0ee71d48208b71752cbb8c05e55145106ef3946" name="word-end" x="826" y="84">
       <params/>
       <attribs/>
    </obj>
-   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1176" y="140">
+   <obj type="tktl/tktl formant shifter" uuid="317119b1-fb6a-48eb-911f-021303a023bb" name="tktl_8" x="1008" y="126">
       <params>
-         <frac32.u.map name="value" value="64.0"/>
+         <frac32.s.map name="p0" value="0.0"/>
+         <frac32.s.map name="p1" value="0.0"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="math/*" uuid="3ac307b9f782049739ed62504081b96d580ea336" name="*_1" x="1260" y="140">
+   <obj type="ctrl/dial p" uuid="cc5d2846c3d50e425f450c4b9851371b54f4d674" name="Volume" x="1260" y="126">
+      <params>
+         <frac32.u.map name="value" value="54.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="math/*" uuid="3ac307b9f782049739ed62504081b96d580ea336" name="*_1" x="1344" y="126">
       <params/>
       <attribs/>
    </obj>
-   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="Output" x="1330" y="140">
+   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="Output" x="1414" y="126">
       <params/>
       <attribs/>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl loader vsm2" uuid="37f03a79-ba9e-44af-957e-28f486587b54" name="tktl_2" x="182" y="182">
+   <obj type="ctrl/dial b" uuid="862e7d7f29093cb1ce4aed72244d118ad4d46692" name="formant" x="630" y="154">
+      <params>
+         <frac32.s.map name="value" MidiCC="6" value="-25.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="tktl/voice/talker_tools/tktl loader vsm2" uuid="37f03a79-ba9e-44af-957e-28f486587b54" name="tktl_2" x="266" y="168">
       <params/>
       <attribs>
          <file attributeName="rom" file="ROMs/talkieROMfixed13bit.vsm2"/>
          <combo attributeName="debug" selection="on"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl voiced source" uuid="20c25aa2-a8ac-4f32-9707-5c28c40fcd00" name="tktl_6" x="630" y="196">
+   <obj type="tktl/voice/talker_tools/tktl voiced source" uuid="20c25aa2-a8ac-4f32-9707-5c28c40fcd00" name="tktl_6" x="714" y="182">
       <params>
          <frac32.s.map name="pitch" value="0.0"/>
          <int32 name="wave" value="0"/>
@@ -56,27 +69,26 @@
          <combo attributeName="debug" selection="off"/>
       </attribs>
    </obj>
-   <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="1260" y="210">
+   <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="1344" y="196">
       <params/>
       <attribs/>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl lpc filter" uuid="2b2d03be-8ed3-4479-9c36-eaa13b741a5d" name="tktl_3" x="1064" y="238">
+   <obj type="tktl/voice/talker_tools/tktl lpc filter" uuid="2b2d03be-8ed3-4479-9c36-eaa13b741a5d" name="tktl_3" x="1148" y="224">
       <params>
          <bool32.tgl name="glide" value="0"/>
          <frac32.u.map name="glideamt" value="29.0"/>
-         <frac32.s.map name="formant" value="-17.0"/>
-         <bool32.tgl name="interp" value="0"/>
+         <bool32.tgl name="interp" value="1"/>
       </params>
       <attribs/>
    </obj>
-   <obj type="midi/in/keyb mod" uuid="abcd509d15e7d13d5381203fd2b4d0ac6fe57bb3" name="keyb_1" x="70" y="266">
+   <obj type="midi/in/keyb mod" uuid="abcd509d15e7d13d5381203fd2b4d0ac6fe57bb3" name="keyb_1" x="154" y="252">
       <params/>
       <attribs/>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl vsm2 reader fixed-frame" uuid="5b7b2cac-7bb5-48da-a563-82cb6c1da0b8" name="tktl_1" x="182" y="266">
+   <obj type="tktl/voice/talker_tools/tktl vsm2 reader fixed-frame" uuid="5b7b2cac-7bb5-48da-a563-82cb6c1da0b8" name="tktl_1" x="266" y="252">
       <params>
-         <int32 name="word" value="251"/>
-         <frac32.u.map name="position" MidiCC="2" value="39.5"/>
+         <int32 name="word" value="189"/>
+         <frac32.u.map name="position" MidiCC="5" value="24.5"/>
          <int32.hradio name="playmode" value="0"/>
          <bool32.mom name="glitch" value="0"/>
          <bool32.tgl name="scrub" value="1"/>
@@ -86,16 +98,15 @@
          <combo attributeName="debug" selection="on"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="tktl_4" x="448" y="266">
+   <obj type="tktl/voice/talker_tools/tktl tables" uuid="f0e017e3-be1a-4eb7-b40f-d57c4888659f" name="tktl_4" x="532" y="252">
       <params>
          <int32 name="tables" value="0"/>
-         <bool32.tgl name="interpolation" value="1"/>
       </params>
       <attribs>
          <combo attributeName="debug" selection="off"/>
       </attribs>
    </obj>
-   <obj type="tktl/voice/talker_tools/tktl source mixer" uuid="e2e6ba5d-3be4-43b7-b420-a6fe4492a77b" name="tktl_7" x="854" y="266">
+   <obj type="tktl/voice/talker_tools/tktl source mixer" uuid="e2e6ba5d-3be4-43b7-b420-a6fe4492a77b" name="tktl_7" x="938" y="252">
       <params>
          <bool32.tgl name="unvoiced" value="0"/>
          <frac32.u.map name="bias" value="0.0"/>
@@ -104,7 +115,13 @@
       </params>
       <attribs/>
    </obj>
-   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_10" x="448" y="364">
+   <obj type="math/+c" uuid="13eec32bd8ad57dd0bb18a02566cc0a117d320e3" name="+c_1" x="70" y="336">
+      <params>
+         <frac32.u.map name="c" MidiCC="4" value="0.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <patchobj type="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d" name="hex_10" x="532" y="336">
       <params/>
       <attribs/>
       <object id="patch/object" uuid="cd5971e6-cf05-4eab-83c9-af3380f34c5d">
@@ -136,26 +153,38 @@ Part of the Talkie Tools object set.</sDescription>
          <includes/>
          <code.krate><![CDATA[// START K-RATE
 
-disp_energy = inlet_TALKER[0]  << 22;
-disp_pitch  = inlet_TALKER[1]  << 20;
-disp_k0     = inlet_TALKER[2]  << 21;
-disp_k1     = inlet_TALKER[3]  << 21;
-disp_k2     = inlet_TALKER[4]  << 22;
-disp_k3     = inlet_TALKER[5]  << 22;
-disp_k4     = inlet_TALKER[6]  << 22;
-disp_k5     = inlet_TALKER[7]  << 22;
-disp_k6     = inlet_TALKER[8]  << 22;
-disp_k7     = inlet_TALKER[9]  << 23;
-disp_k8     = inlet_TALKER[10] << 23;
-disp_k9     = inlet_TALKER[11] << 23;
+disp_energy = inlet_TALKER[0]  << 19;
+disp_pitch  = inlet_TALKER[1]  << 17;
+disp_k0     = inlet_TALKER[2]  << 19;
+disp_k1     = inlet_TALKER[3]  << 19;
+disp_k2     = inlet_TALKER[4]  << 19;
+disp_k3     = inlet_TALKER[5]  << 19;
+disp_k4     = inlet_TALKER[6]  << 19;
+disp_k5     = inlet_TALKER[7]  << 19;
+disp_k6     = inlet_TALKER[8]  << 19;
+disp_k7     = inlet_TALKER[9]  << 19;
+disp_k8     = inlet_TALKER[10] << 19;
+disp_k9     = inlet_TALKER[11] << 19;
 
 // END K-RATE]]></code.krate>
       </object>
    </patchobj>
-   <obj type="tktl/voice/talker_tools/tktl unvoiced source" uuid="4466f754-3f24-4bbc-9f6a-c0ac30754f9f" name="tktl_5" x="616" y="434">
+   <obj type="math/*c" uuid="7d5ef61c3bcd571ee6bbd8437ef3612125dfb225" name="*c_1" x="70" y="434">
+      <params>
+         <frac32.u.map name="amp" MidiCC="3" value="35.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="tktl/voice/talker_tools/tktl unvoiced source" uuid="4466f754-3f24-4bbc-9f6a-c0ac30754f9f" name="tktl_5" x="700" y="434">
       <params>
          <bool32.tgl name="fixed" value="1"/>
          <frac32.s.map name="pitch" value="0.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="lfo/sine" uuid="75f7330c26a13953215dccc3b7b9008545c9daa9" name="sine_1" x="70" y="532">
+      <params>
+         <frac32.s.map name="pitch" MidiCC="2" value="-28.0"/>
       </params>
       <attribs/>
    </obj>
@@ -168,8 +197,8 @@ disp_k9     = inlet_TALKER[11] << 23;
       <net>
          <source obj="tktl_4" outlet="TALKEr"/>
          <dest obj="tktl_7" inlet="TALKEr"/>
-         <dest obj="tktl_3" inlet="TALKEr"/>
          <dest obj="tktl_6" inlet="TALKEr"/>
+         <dest obj="tktl_8" inlet="TALKEr"/>
       </net>
       <net>
          <source obj="tktl_6" outlet="VOICED"/>
@@ -224,13 +253,34 @@ disp_k9     = inlet_TALKER[11] << 23;
          <source obj="tktl_1" outlet="gate"/>
          <dest obj="ahd_1" inlet="trig"/>
       </net>
+      <net>
+         <source obj="sine_1" outlet="wave"/>
+         <dest obj="*c_1" inlet="in"/>
+      </net>
+      <net>
+         <source obj="*c_1" outlet="out"/>
+         <dest obj="+c_1" inlet="in"/>
+      </net>
+      <net>
+         <source obj="tktl_8" outlet="TALKEr"/>
+         <dest obj="tktl_3" inlet="TALKEr"/>
+      </net>
+      <net>
+         <source obj="formant" outlet="out"/>
+         <dest obj="tktl_6" inlet="formant"/>
+         <dest obj="tktl_3" inlet="formant"/>
+      </net>
+      <net>
+         <source obj="+c_1" outlet="out"/>
+         <dest obj="tktl_1" inlet="position"/>
+      </net>
    </nets>
    <settings>
       <subpatchmode>no</subpatchmode>
    </settings>
    <notes><![CDATA[]]></notes>
    <windowPos>
-      <x>350</x>
+      <x>308</x>
       <y>23</y>
       <width>1570</width>
       <height>721</height>
