@@ -9,7 +9,7 @@ Part of the Talker Tools object set.</sDescription>
          <frac32buffer.bipolar name="EXCITATION" description="input from voiced/unvoiced source mixer"/>
          <bool32.risingfalling name="glide" description="apply glide to filter bands"/>
          <bool32 name="glideamt" description="glide rate (fast to slow)"/>
-         <frac32.bipolar name="formant" description="formant-shift"/>
+         <frac32.bipolar name="formant" description="Formant-shift. Connect bipolar constant to this inlet and to "/>
       </inlets>
       <outlets>
          <frac32buffer.bipolar name="wave" description="axoloti-standard level voice output"/>
@@ -53,7 +53,7 @@ uint8_t sample_rate_index;
 // 27-bit sample-rate lookup table
 // +- 16 semitones, centered on 8kHz (0.16667 of 48kHz S-Rate)
 const uint16_t rate_table_int[32] = {
-	4592,
+	//4592,
 	4865,
 	5155,
 	5461,
@@ -69,6 +69,7 @@ const uint16_t rate_table_int[32] = {
 	9731,
 	10310,
 	10923,
+	11572,	// Duplicate value to give 'notch' around 0 shift value, and make range +- 15 semitones
 	11572,
 	12260,
 	12989,
